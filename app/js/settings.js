@@ -75,7 +75,7 @@
     var cv = doc.createElement('canvas');
     cv.className = 'wave-cv';
     cv.width = 460;
-    cv.height = 48;
+    cv.height = 60;
     trackWrap.appendChild(cv);
 
     var fill = el('div', 'wave-fill');
@@ -86,14 +86,21 @@
     trackWrap.appendChild(tMax);
     wrap.appendChild(trackWrap);
 
+    /* 精准刻度轴（按真实时间比例百分比定位） */
+    var tickValues = [1, 5, 10, 15, 20, 30];
     var ticks = el('div', 'wave-ticks');
-    ticks.appendChild(el('span', null, '1分'));
-    ticks.appendChild(el('span', null, '5分'));
-    ticks.appendChild(el('span', null, '10分'));
-    ticks.appendChild(el('span', null, '15分'));
-    ticks.appendChild(el('span', null, '20分'));
-    ticks.appendChild(el('span', null, '30分'));
+    var ti;
+    for (ti = 0; ti < tickValues.length; ti++) {
+      var tv = tickValues[ti];
+      var pct = ((tv - min) / (max - min)) * 100;
+      var tItem = el('div', 'wave-tick-item', tv + '分');
+      tItem.style.left = pct + '%';
+      ticks.appendChild(tItem);
+    }
     wrap.appendChild(ticks);
+
+    var phase = 0;
+    var animId = 0;
 
     function drawWave() {
       var ctx = cv.getContext('2d');
@@ -103,41 +110,105 @@
       ctx.clearRect(0, 0, w, h);
 
       var isDark = doc.documentElement.classList.contains('dark');
-      var bgStroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(18,18,20,0.16)';
-      var activeStroke = isDark ? '#ffd166' : '#c98a1a';
+      var muteColor = isDark ? 'rgba(241, 241, 243, 0.13)' : 'rgba(18, 18, 20, 0.11)';
+      var activeGlow = isDark ? 'rgba(212, 163, 75, 0.38)' : 'rgba(179, 130, 42, 0.28)';
+      var activeColor = isDark ? '#e0b35e' : '#a8731d';
+      var filamentColor = isDark ? 'rgba(224, 179, 94, 0.18)' : 'rgba(168, 115, 29, 0.14)';
 
       var p1 = (values[0] - min) / (max - min);
       var p2 = (values[1] - min) / (max - min);
       var x1 = p1 * w;
       var x2 = p2 * w;
 
+      /* 1. 微光极细虚线中轴（天球/声波参考线） */
       ctx.beginPath();
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = bgStroke;
-      for (var x = 0; x <= w; x++) {
-        var ang = (x / w) * Math.PI * 18;
-        var beat = Math.sin(ang) * 4;
-        if ((x % 60) > 24 && (x % 60) < 36) {
-          beat += Math.sin((x % 60 - 30) / 6 * Math.PI) * 16;
-        }
-        var y = mid + beat;
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      ctx.setLineDash([2, 5]);
+      ctx.strokeStyle = isDark ? 'rgba(241, 241, 243, 0.08)' : 'rgba(18, 18, 20, 0.07)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, mid);
+      ctx.lineTo(w, mid);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      /* 2. 全频轻柔呼吸底波（全局背景共鸣波） */
+      ctx.beginPath();
+      ctx.lineWidth = 1.1;
+      ctx.strokeStyle = muteColor;
+      var x;
+      for (x = 0; x <= w; x += 2) {
+        var a1 = (x / w) * Math.PI * 14 + phase * 0.6;
+        var a2 = (x / w) * Math.PI * 28 - phase * 0.3;
+        var wave = Math.sin(a1) * 4 + Math.sin(a2) * 2;
+        var y = mid + wave;
+        if (x === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
       }
       ctx.stroke();
 
-      ctx.beginPath();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = activeStroke;
-      for (var xx = Math.floor(x1); xx <= Math.ceil(x2); xx++) {
-        var a = (xx / w) * Math.PI * 18;
-        var b = Math.sin(a) * 4;
-        if ((xx % 60) > 24 && (xx % 60) < 36) {
-          b += Math.sin((xx % 60 - 30) / 6 * Math.PI) * 16;
+      /* 3. 激活选区内的活跃多频高能波（心电 + 复合声波脉冲） */
+      if (x2 > x1) {
+        var baseFreq = 22 + (30 - values[0]) * 0.4;
+
+        /* 3.1 垂直频谱细丝条（如无线电频率谱线/心律共鸣丝） */
+        ctx.beginPath();
+        ctx.strokeStyle = filamentColor;
+        ctx.lineWidth = 1;
+        var fx;
+        for (fx = Math.floor(x1) + 2; fx < x2; fx += 4) {
+          var fa1 = (fx / w) * Math.PI * baseFreq + phase * 1.6;
+          var fa2 = (fx / w) * Math.PI * (baseFreq * 2.1) - phase * 0.8;
+          var fa3 = (fx / w) * Math.PI * 6 + phase * 0.5;
+          var pulseF = Math.sin(phase * 1.5) * 1.8;
+          var fVal = Math.sin(fa1) * (9 + pulseF) + Math.cos(fa2) * 4 + Math.sin(fa3) * 3;
+          var fy = mid + fVal;
+          ctx.moveTo(fx, mid);
+          ctx.lineTo(fx, fy);
         }
-        var yy = mid + b;
-        if (xx === Math.floor(x1)) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+        ctx.stroke();
+
+        /* 3.2 柔光光晕外层 */
+        ctx.save();
+        ctx.beginPath();
+        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = activeGlow;
+        ctx.shadowColor = activeColor;
+        ctx.shadowBlur = 12;
+        var xx;
+        for (xx = x1; xx <= x2; xx += 2) {
+          var ang1 = (xx / w) * Math.PI * baseFreq + phase * 1.6;
+          var ang2 = (xx / w) * Math.PI * (baseFreq * 2.1) - phase * 0.8;
+          var ang3 = (xx / w) * Math.PI * 6 + phase * 0.5;
+          var pulse = Math.sin(phase * 1.5) * 1.8;
+          var wVal = Math.sin(ang1) * (9 + pulse) + Math.cos(ang2) * 4 + Math.sin(ang3) * 3;
+          var yy = mid + wVal;
+          if (xx === x1) { ctx.moveTo(xx, yy); } else { ctx.lineTo(xx, yy); }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        /* 3.3 主脉冲高亮曲线 */
+        ctx.beginPath();
+        ctx.lineWidth = 2.2;
+        ctx.strokeStyle = activeColor;
+        var xx2;
+        for (xx2 = x1; xx2 <= x2; xx2 += 2) {
+          var ang1_ = (xx2 / w) * Math.PI * baseFreq + phase * 1.6;
+          var ang2_ = (xx2 / w) * Math.PI * (baseFreq * 2.1) - phase * 0.8;
+          var ang3_ = (xx2 / w) * Math.PI * 6 + phase * 0.5;
+          var pulse_ = Math.sin(phase * 1.5) * 1.8;
+          var wVal_ = Math.sin(ang1_) * (9 + pulse_) + Math.cos(ang2_) * 4 + Math.sin(ang3_) * 3;
+          var yy2 = mid + wVal_;
+          if (xx2 === x1) { ctx.moveTo(xx2, yy2); } else { ctx.lineTo(xx2, yy2); }
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
+    }
+
+    function tick() {
+      if (!doc.hidden && wrap.offsetParent) {
+        phase += 0.038;
+        drawWave();
+      }
+      animId = win.requestAnimationFrame(tick);
     }
 
     function sync() {
@@ -154,21 +225,22 @@
 
     var dragging = null;
     function onPointerMove(e) {
-      if (!dragging) return;
+      if (!dragging) { return; }
       var rect = trackWrap.getBoundingClientRect();
       var clientX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
       var ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       var val = Math.round(min + ratio * (max - min));
       if (dragging === 'min') {
-        if (val > values[1]) val = values[1];
+        if (val > values[1]) { val = values[1]; }
         values[0] = Math.max(min, val);
       } else if (dragging === 'max') {
-        if (val < values[0]) val = values[0];
+        if (val < values[0]) { val = values[0]; }
         values[1] = Math.min(max, val);
       }
       sync();
-      if (onChange) onChange(values.slice(0));
+      if (onChange) { onChange(values.slice(0)); }
     }
+
     function onPointerUp() {
       dragging = null;
       win.removeEventListener('pointermove', onPointerMove);
@@ -176,6 +248,7 @@
       win.removeEventListener('touchmove', onPointerMove);
       win.removeEventListener('touchend', onPointerUp);
     }
+
     function startDrag(target, e) {
       e.preventDefault();
       dragging = target;
@@ -184,34 +257,42 @@
       win.addEventListener('touchmove', onPointerMove);
       win.addEventListener('touchend', onPointerUp);
     }
+
     tMin.addEventListener('pointerdown', function (e) { startDrag('min', e); });
     tMax.addEventListener('pointerdown', function (e) { startDrag('max', e); });
     tMin.addEventListener('touchstart', function (e) { startDrag('min', e); });
     tMax.addEventListener('touchstart', function (e) { startDrag('max', e); });
 
     trackWrap.addEventListener('click', function (e) {
-      if (e.target === tMin || e.target === tMax) return;
+      if (e.target === tMin || e.target === tMax) { return; }
       var rect = trackWrap.getBoundingClientRect();
       var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       var val = Math.round(min + ratio * (max - min));
-      var d1 = Math.abs(val - values[0]);
-      var d2 = Math.abs(val - values[1]);
-      if (d1 < d2) {
+      var dMin = Math.abs(val - values[0]);
+      var dMax = Math.abs(val - values[1]);
+      if (dMin <= dMax) {
         values[0] = Math.min(values[1], Math.max(min, val));
       } else {
         values[1] = Math.max(values[0], Math.min(max, val));
       }
       sync();
-      if (onChange) onChange(values.slice(0));
+      if (onChange) { onChange(values.slice(0)); }
     });
 
-    win.setTimeout(sync, 50);
+    sync();
+    animId = win.requestAnimationFrame(tick);
 
     return {
       node: wrap,
       set: function (newVals) {
-        values = newVals.slice(0);
-        sync();
+        if (newVals && newVals.length === 2) {
+          values = newVals.slice(0);
+          sync();
+        }
+      },
+      destroy: function () {
+        if (animId) { win.cancelAnimationFrame(animId); animId = 0; }
+        onPointerUp();
       }
     };
   }

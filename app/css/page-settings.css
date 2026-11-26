@@ -259,39 +259,52 @@
   padding: 16px 0 20px;
 }
 
+/* ========================================================
+   全新无框灵动声波 / 呼吸心率滑块（Frameless Resonance Wave）
+   去除死板框线，采用通透声波、发丝星针与多频泛音脉冲
+   ======================================================== */
+.row.wave-row {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 16px 0 14px;
+}
+
 .wave-box {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 6px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .wave-badge {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
   font-size: 11.5px;
   letter-spacing: 0.18em;
   color: var(--mute);
   margin-bottom: 8px;
-  text-align: right;
 }
 
 .wave-badge .wv-val {
   color: var(--ink);
+  font-size: 13.5px;
   font-weight: 500;
   margin: 0 3px;
+  letter-spacing: 0.05em;
 }
 
+/* 核心舞台：无边框无实底，通透自然 */
 .wave-track {
   position: relative;
   width: 100%;
-  height: 48px;
-  background: rgba(18, 18, 20, 0.03);
-  border-radius: 6px;
-  border: 1px solid var(--hair);
+  height: 60px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   cursor: pointer;
   touch-action: none;
   overflow: visible;
-}
-
-html.dark .wave-track {
-  background: rgba(255, 255, 255, 0.02);
 }
 
 .wave-cv {
@@ -301,57 +314,128 @@ html.dark .wave-track {
   pointer-events: none;
 }
 
+/* 激活时段通透光帘（优雅渐变，无硬边框） */
 .wave-fill {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgba(217, 154, 38, 0.12);
+  top: 4px;
+  bottom: 4px;
+  background: linear-gradient(180deg, 
+    rgba(179, 130, 42, 0.08) 0%, 
+    rgba(179, 130, 42, 0.02) 50%, 
+    rgba(179, 130, 42, 0.08) 100%
+  );
   pointer-events: none;
-  border-left: 1px solid rgba(217, 154, 38, 0.5);
-  border-right: 1px solid rgba(217, 154, 38, 0.5);
+  border-left: 0;
+  border-right: 0;
+  border-radius: 2px;
+  transition: opacity 0.25s;
 }
 
 html.dark .wave-fill {
-  background: rgba(255, 209, 102, 0.15);
-  border-color: rgba(255, 209, 102, 0.6);
+  background: linear-gradient(180deg, 
+    rgba(212, 163, 75, 0.15) 0%, 
+    rgba(212, 163, 75, 0.03) 50%, 
+    rgba(212, 163, 75, 0.15) 100%
+  );
 }
 
+/* 灵动星针滑块（发丝线 + 中心微光珠） */
 .wave-thumb {
   position: absolute;
-  top: 50%;
-  width: 18px;
-  height: 32px;
-  margin-top: -16px;
-  margin-left: -9px;
-  border-radius: 4px;
-  background: var(--ink);
-  box-shadow: 0 0 10px var(--glow2);
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  height: 60px;
+  margin-top: 0;
+  margin-left: -16px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   cursor: ew-resize;
   touch-action: none;
-  transition: transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   z-index: 5;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.wave-thumb:hover, .wave-thumb:active {
-  transform: scale(1.15);
-}
-
-.wave-thumb::after {
+/* 贯穿发丝星针 */
+.wave-thumb::before {
   content: "";
   position: absolute;
-  top: 8px;
-  bottom: 8px;
-  left: 8px;
-  width: 2px;
-  background: var(--bg);
-  border-radius: 1px;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: var(--ink);
+  opacity: 0.38;
+  transition: opacity 0.2s, background-color 0.2s;
 }
 
+/* 中心呼吸光珠 */
+.wave-thumb::after {
+  content: "";
+  position: relative;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 0 8px var(--glow);
+  z-index: 2;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s, box-shadow 0.2s;
+}
+
+.wave-thumb:hover::after,
+.wave-thumb:active::after {
+  transform: scale(1.3);
+  border-color: #b3822a;
+  box-shadow: 0 0 12px rgba(179, 130, 42, 0.6);
+}
+
+html.dark .wave-thumb:hover::after,
+html.dark .wave-thumb:active::after {
+  border-color: #e0b35e;
+  box-shadow: 0 0 12px rgba(224, 179, 94, 0.7);
+}
+
+.wave-thumb:hover::before,
+.wave-thumb:active::before {
+  opacity: 0.85;
+  background: #b3822a;
+}
+html.dark .wave-thumb:hover::before,
+html.dark .wave-thumb:active::before {
+  background: #e0b35e;
+}
+
+/* 精确刻度轴 */
 .wave-ticks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  height: 18px;
   margin-top: 6px;
   font-size: 9.5px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: var(--mute);
+}
+
+.wave-tick-item {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.wave-tick-item::before {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 3px;
+  background: var(--hair);
+  margin-bottom: 3px;
 }

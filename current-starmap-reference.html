@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>显影 · 星图当前实现与视觉参考（当前线上版本）</title>
+  <style>
+/* ========================================================
+   显影 · 传讯字卡（WHISPER CARDS）- 当前星图视觉与实现基线
+   项目风格：东方水墨 / 禅意冷灰 / 通灵神秘学 / 极简纯前端（零AI）
+   当前问题反馈：星尘颗粒在浅色底上容易产生“灰尘感 / 脏感”，缺乏星辰的璀璨、灵性、神秘感与空间层次感。
+   ======================================================== */
+/* 显影 · 传讯字卡 · 基础层（骨骼、纸面、排版、控件）
+   基线 Chrome 61：不用 flex gap、inset 简写、clamp/min/max、:is/:where/:has、aspect-ratio。
+   视觉语言以 xingxie-visual-prototype-v2.html 为准：暖纸、墨、细线、宽字距、大量留白。 */
+
+*,
+*::before,
+*::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; margin: 0; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  transition: background-color 0.9s, color 0.9s;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.hide { display: none !important; }
+
+#bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+#dust { position: fixed; top: 0; left: 0; z-index: 0; }
+#grain { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
+
+#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2; }
+
+.page { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; }
+.page[hidden] { display: none; }
+
+.col { width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; min-height: 0; }
+
+/* 顶部一行：让出容器原生导航栏，不自己画导航 */
+
+.top {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px 0;
+  padding-top: calc(var(--nav-h) + 8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  color: var(--mute);
+  position: relative;
+  z-index: 4;
+}
+
+.top .sp { flex: 1; }
+
+.tbtn {
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  letter-spacing: 0.24em;
+  padding: 10px 0 10px 18px;
+  font-weight: 400;
+  -webkit-touch-callout: none;
+}
+
+.tbtn:focus { outline: 1px solid var(--glow); outline-offset: 3px; }
+.tbtn:focus:not(:focus-visible) { outline: none; }
+
+.moon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  vertical-align: -1px;
+  background: linear-gradient(90deg, currentColor 50%, rgba(0, 0, 0, 0) 50%);
+}
+
+/* 板面 */
+
+.stage { flex: 1; min-height: 0; position: relative; }
+
+.cw {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -70px;
+  width: 140px;
+  height: 170px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.scroll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 130px, #000 250px);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 130px, #000 250px);
+}
+
+.inner { min-height: 100%; display: flex; flex-direction: column; padding: 190px 30px 0; }
+
+.hist { margin-top: auto; }
+
+.now { position: relative; min-height: 140px; padding: 22px 0 16vh; text-align: center; }
+
+.line {
+  font-size: 23px;
+  line-height: 1.75;
+  letter-spacing: 0.06em;
+  min-height: 1.75em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ph { font-size: 13.5px; letter-spacing: 0.42em; color: var(--mute); }
+
+.pend { height: 18px; text-align: center; font-size: 11px; letter-spacing: 0.26em; color: var(--mute); }
+
+.ctl {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0 16px;
+  padding-bottom: calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+.cb {
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0.46em;
+  padding: 12px 20px 12px 26px;
+  font-weight: 400;
+  transition: opacity 0.5s;
+}
+
+.cb:disabled { opacity: 0.24; cursor: default; }
+.cb:focus { outline: 1px solid var(--glow); outline-offset: 2px; }
+.cb:focus:not(:focus-visible) { outline: none; }
+
+.sep { display: block; width: 1px; height: 14px; background: var(--hair); }
+
+/* 全站按钮与交互反馈（物理微下压 + 弹性回弹） */
+button, .tbtn, .cb, .step__btn, .sw, .s-item, .d-btn, .ov-btn, .hold-btn {
+  transition: transform 0.12s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.2s, background-color 0.2s, color 0.2s;
+  will-change: transform;
+}
+
+button:active:not(:disabled),
+.tbtn:active:not(:disabled),
+.cb:active:not(:disabled),
+.step__btn:active:not(:disabled),
+.ov-btn:active:not(:disabled),
+.sw:active {
+  transform: scale(0.93);
+  opacity: 0.72;
+}
+
+/* 按钮步骤引导呼吸微光 */
+.cb.guide-place {
+  animation: guidePulse 2s ease-in-out infinite;
+}
+.cb.guide-hand {
+  animation: guideHandPulse 2s ease-in-out infinite;
+}
+
+@keyframes guidePulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); text-shadow: 0 0 10px var(--glow); }
+}
+
+@keyframes guideHandPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); text-shadow: 0 0 12px var(--glow), 0 0 24px var(--glow2); }
+}
+
+/* 设置页 */
+
+.s-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  padding: 8px 20px 10px;
+  padding-top: calc(var(--nav-h) + 8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  border-bottom: 1px solid var(--hair);
+  background: var(--bg);
+  transition: background-color 0.9s;
+}
+
+.s-bar .tbtn { padding: 8px 0 8px 0; letter-spacing: 0.24em; }
+
+.s-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11.5px;
+  letter-spacing: 0.3em;
+  color: var(--mute);
+  pointer-events: none;
+}
+
+.s-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+.s-inner {
+  padding: 20px 24px 40px;
+  padding-bottom: calc(40px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.group { margin-bottom: 24px; }
+
+.group h4 {
+  margin: 0 0 4px;
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  color: var(--mute);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-top: 1px solid var(--hair);
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+}
+
+.row:first-of-type { border-top: 0; }
+
+.row__label { flex: 1 1 auto; min-width: 0; padding-right: 14px; }
+
+.row small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+.sw {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--ink);
+  background: none;
+  flex: 0 0 36px;
+}
+
+.sw::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.3s;
+}
+
+.sw[aria-checked="true"] { background: var(--ink); }
+.sw[aria-checked="true"]::after { background: var(--bg); transform: translateX(16px); }
+
+.sw:focus { outline: 1px solid var(--glow); outline-offset: 3px; }
+
+.segc { display: flex; }
+
+.segc button {
+  background: none;
+  border: 1px solid var(--hair);
+  color: var(--mute);
+  font-size: 12px;
+  padding: 6px 12px;
+  margin-left: -1px;
+  letter-spacing: 0.1em;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.segc button:first-child { margin-left: 0; }
+.segc button.on { color: var(--bg); background: var(--ink); border-color: var(--ink); }
+
+.lnk {
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  padding: 6px 0;
+  text-decoration: underline;
+  text-decoration-color: var(--hair);
+}
+
+.info {
+  margin-top: 16px;
+  font-size: 11px;
+  line-height: 1.85;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+.info b { font-weight: 400; color: var(--ink2); }
+
+/* 开场仪式 */
+
+#ritual {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  transition: opacity 1.3s, background-color 0.9s;
+}
+
+#ritual.gone2 { opacity: 0; pointer-events: none; }
+
+.rt { margin-top: 6px; font-size: 13px; letter-spacing: 0.7em; padding-left: 0.7em; color: var(--ink); }
+
+/* 已送走（P2-8）：还是这块覆盖层，只是另一种状态。
+   烛火先灭、烟飘一会儿，字再浮出来，最后才给「再点一支蜡烛」。 */
+#ritual.closing .rt { animation: none; opacity: 0; transition: opacity 1.2s; }
+#ritual.closing.shown .rt { opacity: 1; }
+
+#ritual.closing .rs { opacity: 0; transition: opacity 1.2s 0.36s; }
+#ritual.closing.shown .rs { opacity: 1; }
+
+#ritual .again {
+  display: none;
+  margin-top: 42px;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  letter-spacing: 0.46em;
+  padding: 8px 0 8px 0.46em;
+  opacity: 0;
+  transition: opacity 1.1s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+#ritual.closing .again { display: inline-block; pointer-events: none; }
+#ritual.closing.shown .again { opacity: 1; pointer-events: auto; }
+
+#ritual .again:focus { outline: 1px solid var(--mute); outline-offset: 4px; }
+#ritual .again:focus:not(:focus-visible) { outline: none; }
+.rs { margin-top: 14px; font-size: 11px; letter-spacing: 0.3em; color: var(--mute); min-height: 1em; }
+.noscript { position: relative; z-index: 60; margin: 80px auto; max-width: 420px; padding: 16px 18px; border: 1px solid var(--hair); font-size: 13px; color: var(--ink2); }
+
+.num-like { font-size: 12.5px; letter-spacing: 0.16em; color: var(--mute); font-variant-numeric: tabular-nums; }
+/* ---------- 显示偏好钩子（P3） ----------
+   html 上挂着 .fade 与 data-speed（见 app.js applyPrefs），对话页渲染历史段落时按这两个值褪色。
+   M3 接线前这里没有节点会命中：先把"设置"变成文档上可读的事实，别等做对话页时再回头改设置层。 */
+html[data-speed="1"] { --fade-dur: 2.4s; }
+html[data-speed="2"] { --fade-dur: 1.4s; }
+html[data-speed="3"] { --fade-dur: 0.8s; }
+
+html.fade .hist .seg {
+  opacity: 0.6;
+  transition: opacity var(--fade-dur, 1.4s) linear;
+}
+
+/* 顶栏左侧星图与编号基线精确对齐 */
+.top-nav {
+  display: flex;
+  align-items: baseline;
+}
+.top-nav .tbtn {
+  padding: 0;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: var(--ink);
+  line-height: 1;
+}
+.top-nav .top-sep {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  background: var(--hair);
+  margin: 0 10px;
+  align-self: center;
+}
+.top-nav #sessNo {
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  color: var(--mute);
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* 星图与历史（M5）
+   以 F:\参考html\starmap-v3.html 为准：
+   全透明星空、浮动轻盈顶栏、精细浮动卡片、底端微光图例。
+   基线 Chrome 61。 */
+
+.page[data-page="starmap"] {
+  background: transparent !important;
+}
+
+.starmap-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.sm-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+/* 顶部轻盈通透浮动导航（无实体硬边栏，完全浮动在星空之上） */
+.sm-top {
+  display: flex;
+  align-items: baseline;
+  padding: 8px 20px 0;
+  padding-top: calc(var(--nav-h) + 8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  position: relative;
+  z-index: 20;
+}
+
+.sm-top .sm-back {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  letter-spacing: 0.24em;
+  color: var(--ink);
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sm-top .sm-back:hover {
+  color: var(--ink);
+}
+
+.sm-ttl {
+  font-size: 13px;
+  letter-spacing: 0.4em;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.sm-top .sep {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  background: var(--hair);
+  margin: 0 10px;
+  align-self: center;
+}
+
+.sm-cnt {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--mute);
+  line-height: 1;
+}
+
+.sm-top .sp {
+  flex: 1;
+}
+
+.sm-top .theme-btn {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  align-self: center;
+}
+
+.sm-empty {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 20px;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 13.5px;
+  letter-spacing: 0.32em;
+  color: var(--mute);
+  line-height: 1.9;
+  pointer-events: none;
+}
+
+.sm-empty small {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  opacity: 0.75;
+}
+
+/* 底部图例（来自 starmap-v3.html） */
+.foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  z-index: 4;
+  pointer-events: none;
+  text-align: center;
+  transition: opacity 0.8s;
+}
+
+.foot .hint {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--mute);
+}
+
+.foot .legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--mute);
+}
+
+.foot .legend .d {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--ink);
+  margin-right: 6px;
+  vertical-align: middle;
+  box-shadow: 0 0 6px var(--glow);
+}
+
+.foot .legend .g {
+  display: flex;
+  align-items: center;
+}
+
+.foot .legend .sep {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  background: var(--hair);
+  margin: 0 12px;
+}
+
+/* 底部悬浮卡片（来自 starmap-v3.html） */
+#pageStarmap .card {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 22px 30px 12px;
+  padding-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: var(--bg);
+  border-top: 1px solid var(--hair);
+  box-shadow: 0 -6px 20px var(--glow2);
+  transform: translateY(105%);
+  transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1), background-color 0.9s;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  #pageStarmap .card {
+    background: rgba(244, 244, 242, 0.76);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+  html.dark #pageStarmap .card {
+    background: rgba(11, 11, 13, 0.72);
+  }
+}
+
+#pageStarmap .card.on {
+  transform: translateY(0);
+}
+
+.ch { display: flex; align-items: baseline; }
+.cn { font-size: 11px; letter-spacing: 0.3em; color: var(--mute); margin-right: 6px; }
+.cno { font-size: 26px; letter-spacing: 0.16em; font-weight: 300; text-shadow: 0 0 14px var(--glow2); color: var(--ink); }
+.ab { font-size: 12px; letter-spacing: 0.24em; padding: 6px 0 6px 14px; font-weight: 400; color: var(--mute); background: none; border: 0; cursor: pointer; }
+.ab:hover { color: var(--ink); }
+.ct { margin-top: 6px; font-size: 12px; letter-spacing: 0.18em; color: var(--ink2); }
+.cm { display: flex; align-items: center; margin-top: 8px; font-size: 11px; letter-spacing: 0.22em; color: var(--mute); }
+.cm .sep { display: inline-block; width: 1px; height: 10px; background: var(--hair); margin: 0 12px; }
+.ca { display: flex; justify-content: center; align-items: center; margin-top: 14px; border-top: 1px solid var(--hair); padding-top: 4px; }
+.ca .cb { font-size: 13.5px; letter-spacing: 0.36em; padding: 10px 24px; font-weight: 400; color: var(--ink); background: none; border: 0; cursor: pointer; }
+
+/* 会话详情与回放全屏覆盖层 */
+.sess-replay-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 14px;
+}
+
+.sess-play-btn {
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  color: var(--ink);
+  font-size: 11.5px;
+  letter-spacing: 0.2em;
+  padding: 6px 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.sess-track {
+  flex: 1;
+  height: 24px;
+  position: relative;
+  margin: 0 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sess-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hair);
+}
+
+.sess-fill {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--ink);
+}
+
+.sess-knob {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 6px var(--glow2);
+}
+
+.sess-clk {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--mute);
+  flex: 0 0 auto;
+  min-width: 44px;
+  text-align: right;
+}
+
+.sess-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 0 30px;
+}
+
+.sess-hist {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* 单文件独立预览适配 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page[data-page="starmap"] {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.demo-hint-bar {
+  position: fixed;
+  top: 12px;
+  right: 60px;
+  z-index: 100;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--mute);
+  background: rgba(0,0,0,0.04);
+  padding: 4px 10px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+html.dark .demo-hint-bar {
+  background: rgba(255,255,255,0.08);
+}
+  </style>
+</head>
+<body>
+  <canvas id="dust"></canvas>
+  <div id="grain"></div>
+  <div class="demo-hint-bar">当前版本视觉参考 · 可点击星点查看卡片 · 点右上角切换深浅色</div>
+
+  <div id="app">
+    <section class="page" data-page="starmap" id="pageStarmap" tabindex="-1">
+      <div class="col">
+        <!-- 顶栏：完全通透、浮动在星空之上的导航栏 -->
+        <header class="sm-top">
+          <button class="sm-back" id="btnStarmapBack" type="button" aria-label="返回对话">‹ 返回</button>
+          <i class="sep"></i>
+          <span class="sm-ttl">星图</span>
+          <i class="sep"></i>
+          <span class="sm-cnt" id="smCnt">共 3 场会话</span>
+          <span class="sp"></span>
+          <button class="theme-btn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
+        </header>
+
+        <!-- 星图画布容器 -->
+        <div class="starmap-stage" id="starmapStage">
+          <canvas id="smCanvas" class="sm-canvas"></canvas>
+          <div class="sm-empty" id="smEmpty" hidden>还没有留下历史星尘<br><small>完成一次会话并「送走」后，光点将在这里显影成星</small></div>
+          <div class="foot" id="smFoot">
+            <span class="hint">拖动旋转　上下倾斜　轻点星空</span>
+            <div class="legend">
+              <span class="g"><i class="d" style="width:3px;height:3px"></i><i class="d" style="width:8px;height:8px"></i>消息数</span>
+              <i class="sep"></i>
+              <span class="g"><i class="d" style="width:5px;height:5px;opacity:.3"></i><i class="d" style="width:5px;height:5px"></i>越亮越近</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部悬浮卡片 -->
+        <div class="card" id="smCard" role="dialog" aria-labelledby="smCno" hidden>
+          <div class="in" id="smCardIn">
+            <div class="ch">
+              <span class="cn">No.</span>
+              <span class="cno" id="smCno">----</span>
+              <span class="sp"></span>
+              <button class="ab" id="smCardClose" type="button">收起</button>
+            </div>
+            <div class="ct" id="smMeta"></div>
+            <div class="cm"><span id="smMsg">共 0 段</span><i class="sep"></i><span id="smDeck"></span></div>
+          </div>
+          <div class="ca">
+            <button class="cb" id="smBtnReplay" type="button">回放</button>
+            <i class="sep"></i>
+            <button class="cb" id="smBtnView" type="button">展开全篇</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 基础环境与模拟会话数据
+    window.Oracle = window.Oracle || {};
+    var mockSessions = [
+      { no: '8801', startedAt: Date.now() - 86400000 * 3, endedAt: Date.now() - 86400000 * 3 + 1200000, msgCount: 16, decks: ['字卡', '塔罗'] },
+      { no: '8802', startedAt: Date.now() - 86400000 * 2, endedAt: Date.now() - 86400000 * 2 + 800000, msgCount: 8, decks: ['字卡'] },
+      { no: '8803', startedAt: Date.now() - 86400000 * 1, endedAt: Date.now() - 86400000 * 1 + 1800000, msgCount: 24, decks: ['字卡', '特殊卡', '塔罗'] }
+    ];
+
+    window.Oracle.db = {
+      loadSessions: function() { return Promise.resolve(mockSessions); },
+      saveSessions: function(s) { mockSessions = s; return Promise.resolve(); },
+      loadEvents: function() { return Promise.resolve([]); }
+    };
+    window.Oracle.ui = {
+      openOv: function() {},
+      closeOv: function() {}
+    };
+
+    // 深浅色主题切换
+    var btnTheme = document.getElementById('btnStarmapTheme');
+    btnTheme.addEventListener('click', function() {
+      document.documentElement.classList.toggle('dark');
+    });
+
+    /* 星图与历史（M5）
+   以 F:\参考html\starmap-v3.html 与 session.html 为准：
+   全透明星空、旋臂星盘粒子、手势旋转倾斜、点选光点聚焦并弹出会话卡，支持全篇阅读与回放重现。
+   基线 Chrome 61。数据来自 Oracle.db.loadSessions 与 loadEvents。 */
+(function (win) {
+  'use strict';
+  var O = win.Oracle = win.Oracle || {};
+  var doc = win.document;
+  var el = O.ui.el;
+
+  var refs = null;
+  var sessions = [];
+  var curSess = null;
+  var events = [];
+  var sel = -1;
+  var hover = -1;
+  var animId = 0;
+  var ticking = false;
+
+  var W = 0;
+  var H = 0;
+  var DPR = 1;
+  var G = { cx: 0, cy: 0, rx: 0, ry: 0 };
+
+  /* 物理与视角 */
+  var rot = 0;
+  var vel = 0;
+  var tilt = 0;
+  var tiltT = 0;
+  var cam = { x: 0, y: 0, z: 1, tx: 0, ty: 0, tz: 1 };
+  var lastTs = 0;
+
+  var ST = [];   /* 会话恒星模型 */
+  var P = [];    /* 旋臂星尘粒子 */
+  var TMP = { x: 0, y: 0 };
+
+  var replay = {
+    running: false,
+    timer: 0,
+    curIdx: 0
+  };
+
+  /* 伪随机数（保证星盘粒子一致） */
+  function mulberry(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function formatDate(ts) {
+    if (!ts) { return ''; }
+    var d = new Date(ts);
+    var y = d.getFullYear();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    var hr = d.getHours();
+    var min = d.getMinutes();
+    return y + '.' + (m < 10 ? '0' : '') + m + '.' + (day < 10 ? '0' : '') + day + ' ' + (hr < 10 ? '0' : '') + hr + ':' + (min < 10 ? '0' : '') + min;
+  }
+
+  function resize() {
+    if (!refs || !refs.canvas) { return; }
+    var stage = refs.canvas.parentElement;
+    W = stage.clientWidth || 360;
+    H = stage.clientHeight || 540;
+    DPR = Math.min(win.devicePixelRatio || 1, 2);
+    refs.canvas.width = Math.round(W * DPR);
+    refs.canvas.height = Math.round(H * DPR);
+    refs.canvas.style.width = W + 'px';
+    refs.canvas.style.height = H + 'px';
+
+    G.cx = W / 2;
+    G.cy = H / 2;
+    G.rx = Math.min(W - 48, 520) / 2;
+    G.ry = Math.min(H * 0.44, G.rx * 1.4);
+  }
+
+  /* 旋臂数学公式（来自 starmap-v3.html） */
+  function spiralA(u, k) { return -1.9 + u * k; }
+  function spiralR(u) { return 0.08 + 0.92 * Math.sqrt(u); }
+
+  function buildModel() {
+    var N = sessions.length;
+    var k = N > 1 ? (N - 1) * 0.58 : 8;
+    ST = [];
+    var i;
+    for (i = 0; i < N; i++) {
+      var s = sessions[i];
+      var u = N > 1 ? (N - 1 - i) / (N - 1) : 0;
+      var r = spiralR(u);
+      var a = spiralA(u, k);
+      var size = Math.min(8, Math.max(3.2, Math.sqrt(s.msgCount || 1) * 1.8));
+      var brightness = 0.35 + 0.65 * ((i + 1) / N);
+      ST.push({
+        sess: s,
+        r: r,
+        a: a,
+        size: size,
+        brightness: brightness,
+        spike: (s.msgCount || 0) >= 15,
+        sx: 0,
+        sy: 0
+      });
+    }
+
+    /* 旋臂背景星尘粒子（数百颗柔和微光星屑） */
+    var rng = mulberry(4402);
+    P = [];
+    var count = Math.min(480, Math.round(W * H / 700));
+    for (i = 0; i < count; i++) {
+      var pu = Math.pow(rng(), 0.85);
+      var arm = i % 2;
+      var pr = spiralR(pu) + (rng() - 0.5) * 0.06;
+      var pa = spiralA(pu, k) + arm * Math.PI + (rng() - 0.5) * 0.22;
+      P.push({
+        r: Math.max(0.04, pr),
+        a: pa,
+        size: 0.6 + rng() * 1.2,
+        alpha: (0.15 + rng() * 0.4) * (1 - pu * 0.45)
+      });
+    }
+  }
+
+  /* 星系坐标映射到屏幕坐标 */
+  function worldToScreen(r, a, out) {
+    var curA = a + rot;
+    var cos = Math.cos(curA);
+    var sin = Math.sin(curA);
+    var tk = 1 - Math.abs(tilt) * 0.4;
+    var wx = G.cx + cos * r * G.rx;
+    var wy = G.cy + sin * r * G.ry * tk + tilt * G.ry * 0.25;
+
+    /* 摄像机变换 */
+    out.x = cam.x + (wx - cam.tx) * cam.z;
+    out.y = cam.y + (wy - cam.ty) * cam.z;
+    return out;
+  }
+
+  function drawStarmap() {
+    if (!refs || !refs.canvas) { return; }
+    var ctx = refs.canvas.getContext('2d');
+    ctx.clearRect(0, 0, refs.canvas.width, refs.canvas.height);
+    ctx.save();
+    ctx.scale(DPR, DPR);
+
+    var isDark = doc.documentElement.classList.contains('dark');
+    var inkRgb = isDark ? '244, 244, 246' : '18, 18, 20';
+    var gold = isDark ? '#ffd166' : '#c98a1a';
+    var goldAlpha = isDark ? 'rgba(255, 209, 102, ' : 'rgba(201, 138, 26, ';
+
+    /* 1. 绘制环境旋臂星尘粒子 */
+    var i;
+    for (i = 0; i < P.length; i++) {
+      var p = P[i];
+      worldToScreen(p.r, p.a, TMP);
+      ctx.beginPath();
+      ctx.arc(TMP.x, TMP.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + inkRgb + ', ' + p.alpha + ')';
+      ctx.fill();
+    }
+
+    /* 2. 绘制会话光点 */
+    for (i = 0; i < ST.length; i++) {
+      var s = ST[i];
+      worldToScreen(s.r, s.a, TMP);
+      s.sx = TMP.x;
+      s.sy = TMP.y;
+
+      var isSel = (i === sel);
+      var isHov = (i === hover);
+
+      if (isSel) {
+        /* 选中光点：外圈微动虚线光环与星晕 */
+        ctx.beginPath();
+        ctx.arc(s.sx, s.sy, s.size + 10, 0, Math.PI * 2);
+        ctx.strokeStyle = gold;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(s.sx, s.sy, s.size + 16, 0, Math.PI * 2);
+        ctx.strokeStyle = goldAlpha + '0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      /* 外层呼吸光晕 */
+      ctx.beginPath();
+      ctx.arc(s.sx, s.sy, isSel ? s.size * 2.8 : s.size * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = isSel ? (goldAlpha + '0.2)') : ('rgba(' + inkRgb + ', ' + (s.brightness * 0.16) + ')');
+      ctx.fill();
+
+      /* 核心亮核 */
+      ctx.beginPath();
+      ctx.arc(s.sx, s.sy, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = isSel ? (isDark ? '#fff' : '#000') : ('rgba(' + inkRgb + ', ' + s.brightness + ')');
+      ctx.fill();
+
+      /* 大场次光芒十字星芒（Spike） */
+      if (s.spike && (isSel || isHov)) {
+        ctx.beginPath();
+        ctx.moveTo(s.sx - s.size * 2.5, s.sy);
+        ctx.lineTo(s.sx + s.size * 2.5, s.sy);
+        ctx.moveTo(s.sx, s.sy - s.size * 2.5);
+        ctx.lineTo(s.sx, s.sy + s.size * 2.5);
+        ctx.strokeStyle = goldAlpha + '0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function frame(ts) {
+    if (doc.hidden) { ticking = false; return; }
+    var dt = lastTs ? Math.min(ts - lastTs, 64) : 16;
+    lastTs = ts;
+
+    /* 物理惯性旋转 */
+    rot += vel * dt + 0.00035;
+    vel *= Math.exp(-dt / 800);
+    tilt += (tiltT - tilt) * Math.min(1, dt / 240);
+
+    /* 摄像机平滑跟踪焦点 */
+    var targetZ = (sel >= 0) ? 1.35 : 1;
+    var targetTx = (sel >= 0) ? (G.cx + (ST[sel].sx - G.cx) * 0.5) : G.cx;
+    var targetTy = (sel >= 0) ? (G.cy + (ST[sel].sy - G.cy) * 0.5) : G.cy;
+
+    cam.z += (targetZ - cam.z) * Math.min(1, dt / 350);
+    cam.tx += (targetTx - cam.tx) * Math.min(1, dt / 350);
+    cam.ty += (targetTy - cam.ty) * Math.min(1, dt / 350);
+    cam.x = G.cx;
+    cam.y = G.cy;
+
+    drawStarmap();
+    animId = win.requestAnimationFrame(frame);
+  }
+
+  function startLoop() {
+    if (!ticking) {
+      ticking = true;
+      lastTs = 0;
+      animId = win.requestAnimationFrame(frame);
+    }
+  }
+
+  function stopLoop() {
+    if (animId) {
+      win.cancelAnimationFrame(animId);
+      animId = 0;
+      ticking = false;
+    }
+  }
+
+  /* 拖拽交互：手势旋转星盘与点选 */
+  function bindInteractions() {
+    if (!refs || !refs.canvas) { return; }
+    var cv = refs.canvas;
+    var dragging = false;
+    var lastX = 0;
+    var lastY = 0;
+    var moved = 0;
+
+    function onDown(e) {
+      dragging = true;
+      moved = 0;
+      lastX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+      lastY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+      vel = 0;
+    }
+
+    function onMove(e) {
+      if (!dragging) { return; }
+      var curX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+      var curY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+      var dx = curX - lastX;
+      var dy = curY - lastY;
+      moved += Math.abs(dx) + Math.abs(dy);
+
+      rot += dx * 0.005;
+      vel = dx * 0.0003;
+      tiltT = Math.max(-0.55, Math.min(0.55, tiltT + dy * 0.004));
+
+      lastX = curX;
+      lastY = curY;
+    }
+
+    function onUp(e) {
+      if (!dragging) { return; }
+      dragging = false;
+
+      /* 未发生大幅拖动时判定为点击选中 */
+      if (moved < 8) {
+        var clientX = e.clientX || (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientX) || 0;
+        var clientY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY;
+        var rect = cv.getBoundingClientRect();
+        var x = clientX - rect.left;
+        var y = clientY - rect.top;
+
+        var nearestIdx = -1;
+        var minD = 44;
+        var i;
+        for (i = 0; i < ST.length; i++) {
+          var s = ST[i];
+          var d = Math.hypot(s.sx - x, s.sy - y);
+          if (d < minD) {
+            minD = d;
+            nearestIdx = i;
+          }
+        }
+        if (nearestIdx >= 0) {
+          selectSession(nearestIdx);
+        } else {
+          closeCard();
+        }
+      }
+    }
+
+    cv.addEventListener('pointerdown', onDown);
+    win.addEventListener('pointermove', onMove);
+    win.addEventListener('pointerup', onUp);
+    cv.addEventListener('touchstart', onDown);
+    win.addEventListener('touchmove', onMove);
+    win.addEventListener('touchend', onUp);
+  }
+
+  function selectSession(idx) {
+    sel = idx;
+    var s = ST[idx];
+    curSess = s.sess;
+
+    var cno = refs.cno || refs.smCno || win.document.getElementById('smCno');
+    var meta = refs.meta || refs.smMeta || win.document.getElementById('smMeta');
+    var msg = refs.msg || refs.smMsg || win.document.getElementById('smMsg');
+    var deck = refs.deck || refs.smDeck || win.document.getElementById('smDeck');
+    var card = refs.card || refs.smCard || win.document.getElementById('smCard');
+
+    if (cno) { cno.textContent = curSess.no; }
+    if (meta) { meta.textContent = formatDate(curSess.startedAt); }
+    if (msg) { msg.textContent = '共 ' + (curSess.msgCount || 0) + ' 段'; }
+    var dNames = curSess.decks ? (Array.isArray(curSess.decks) ? curSess.decks.join(' · ') : curSess.decks) : '字卡';
+    if (deck) { deck.textContent = dNames; }
+
+    if (card) {
+      card.hidden = false;
+      /* 强制重绘后加 on 类触发丝滑平移上浮 */
+      void card.offsetHeight;
+      card.classList.add('on');
+    }
+  }
+
+  function closeCard() {
+    sel = -1;
+    var card = refs.card || refs.smCard;
+    if (card) {
+      card.classList.remove('on');
+      win.setTimeout(function () {
+        if (sel === -1) { card.hidden = true; }
+      }, 650);
+    }
+  }
+
+  /* 会话消息渲染（全览与回放） */
+  function renderHistoryEvents(evList) {
+    if (!refs.sessHist) { return; }
+    refs.sessHist.textContent = '';
+    var i;
+    for (i = 0; i < evList.length; i++) {
+      var ev = evList[i];
+      var seg = el('div', 'ch-seg' + (ev.who === 'me' ? ' me' : ''));
+      if (ev.who === 'me') {
+        var tb = el('div', 'ch-t');
+        tb.appendChild(el('span', 'ch-w', ev.text || ''));
+        seg.appendChild(tb);
+      } else {
+        var band = el('div', 'ch-o');
+        var row = el('div', 'ch-row');
+        var cards = ev.cards || [];
+        var j;
+        for (j = 0; j < cards.length; j++) {
+          var c = cards[j];
+          var it = el('div', 'ch-it' + (c.kind === 'tarot' ? ' tf' : ''));
+          if (c.kind === 'tarot') {
+            if (c.num && c.num !== c.name) { it.appendChild(el('span', 'tn', c.num)); }
+            it.appendChild(el('span', 'nm', c.name || ''));
+            it.appendChild(el('span', 'kw', c.side === 'reversed' ? c.reversed : c.upright));
+          } else if (c.image) {
+            var img = doc.createElement('img');
+            img.src = c.image;
+            it.appendChild(img);
+          } else if (c.kind === 'gift') {
+            if (O.giftCard) { it.appendChild(O.giftCard.create(c)); }
+          }
+          row.appendChild(it);
+        }
+        band.appendChild(row);
+        seg.appendChild(band);
+      }
+      seg.appendChild(el('span', 'ch-tm', formatDate(ev.at)));
+      refs.sessHist.appendChild(seg);
+    }
+  }
+
+  function openView() {
+    if (!curSess) { return; }
+    if (refs.sessTitle) { refs.sessTitle.textContent = '会话 No.' + curSess.no; }
+    if (refs.replayBar) { refs.replayBar.hidden = true; }
+    O.ui.openOv(refs.ovSession, refs.sessClose);
+    O.db.loadEvents(curSess.no).then(function (list) {
+      events = list || [];
+      renderHistoryEvents(events);
+    });
+  }
+
+  function openReplay() {
+    if (!curSess) { return; }
+    if (refs.sessTitle) { refs.sessTitle.textContent = '重现回放 · No.' + curSess.no; }
+    if (refs.replayBar) { refs.replayBar.hidden = false; }
+    O.ui.openOv(refs.ovSession, refs.sessClose);
+    O.db.loadEvents(curSess.no).then(function (list) {
+      events = list || [];
+      startReplayTimeline();
+    });
+  }
+
+  function startReplayTimeline() {
+    replay.curIdx = 0;
+    replay.running = true;
+    if (refs.playBtn) { refs.playBtn.textContent = '暂停'; }
+    if (refs.sessHist) { refs.sessHist.textContent = ''; }
+    tickReplay();
+  }
+
+  function tickReplay() {
+    if (!replay.running) { return; }
+    if (replay.curIdx >= events.length) {
+      replay.running = false;
+      if (refs.playBtn) { refs.playBtn.textContent = '重播'; }
+      return;
+    }
+    var listSoFar = events.slice(0, replay.curIdx + 1);
+    renderHistoryEvents(listSoFar);
+
+    var ratio = (replay.curIdx + 1) / Math.max(events.length, 1);
+    if (refs.fill) { refs.fill.style.width = (ratio * 100) + '%'; }
+    if (refs.knob) { refs.knob.style.left = (ratio * 100) + '%'; }
+    if (refs.clk) { refs.clk.textContent = (replay.curIdx + 1) + '/' + events.length; }
+
+    replay.curIdx += 1;
+    replay.timer = win.setTimeout(tickReplay, 1200);
+  }
+
+  function togglePlay() {
+    if (replay.running) {
+      replay.running = false;
+      win.clearTimeout(replay.timer);
+      if (refs.playBtn) { refs.playBtn.textContent = '播放'; }
+    } else {
+      if (replay.curIdx >= events.length) { replay.curIdx = 0; }
+      replay.running = true;
+      if (refs.playBtn) { refs.playBtn.textContent = '暂停'; }
+      tickReplay();
+    }
+  }
+
+  function open() {
+    resize();
+    return O.db.loadSessions().then(function (res) {
+      sessions = res || [];
+      buildModel();
+
+      var cnt = refs.cnt || refs.smCnt || win.document.getElementById('smCnt');
+      if (cnt) { cnt.textContent = '共 ' + sessions.length + ' 场会话'; }
+
+      var empty = refs.empty || refs.smEmpty;
+      if (empty) { empty.hidden = (sessions.length > 0); }
+
+      startLoop();
+    });
+  }
+
+  function close() {
+    stopLoop();
+    closeCard();
+  }
+
+  function mount(r) {
+    refs = r;
+    if (!refs || !refs.canvas) { return; }
+    resize();
+    bindInteractions();
+    win.addEventListener('resize', resize);
+
+    var cardClose = refs.cardClose || refs.smCardClose;
+    if (cardClose) { cardClose.addEventListener('click', closeCard); }
+
+    var btnView = refs.btnView || refs.smBtnView;
+    if (btnView) { btnView.addEventListener('click', openView); }
+
+    var btnReplay = refs.btnReplay || refs.smBtnReplay;
+    if (btnReplay) { btnReplay.addEventListener('click', openReplay); }
+
+    if (refs.sessClose) {
+      refs.sessClose.addEventListener('click', function () {
+        replay.running = false;
+        win.clearTimeout(replay.timer);
+        if (refs.ovSession) { O.ui.closeOv(refs.ovSession); }
+      });
+    }
+
+    if (refs.playBtn) { refs.playBtn.addEventListener('click', togglePlay); }
+  }
+
+  O.starmap = {
+    mount: mount,
+    open: open,
+    close: close
+  };
+})(window);
+
+    // 初始化挂载
+    document.addEventListener('DOMContentLoaded', function() {
+      window.Oracle.starmap.mount({
+        canvas: document.getElementById('smCanvas'),
+        empty: document.getElementById('smEmpty'),
+        card: document.getElementById('smCard'),
+        cnt: document.getElementById('smCnt'),
+        smCno: document.getElementById('smCno'),
+        smMeta: document.getElementById('smMeta'),
+        smMsg: document.getElementById('smMsg'),
+        smDeck: document.getElementById('smDeck'),
+        cardClose: document.getElementById('smCardClose'),
+        btnView: document.getElementById('smBtnView'),
+        btnReplay: document.getElementById('smBtnReplay')
+      });
+      window.Oracle.starmap.open();
+    });
+  </script>
+</body>
+</html>
