@@ -25,7 +25,11 @@
   <section class="page" data-page="chat" id="pageChat" tabindex="-1">
     <div class="col">
       <header class="top">
-        <button class="tbtn" id="btnStarmap" type="button" aria-label="查看星图与历史">星图</button><span id="sessNo">No.----</span>
+        <div class="top-nav">
+          <button class="tbtn" id="btnStarmap" type="button" aria-label="查看星图与历史">星图</button>
+          <i class="top-sep"></i>
+          <span id="sessNo">No.----</span>
+        </div>
         <span class="sp"></span>
         <button class="tbtn" id="btnReveal" type="button" aria-label="按住显影" aria-pressed="false">显影</button>
         <button class="tbtn" id="btnSendAway" type="button">送走</button>
@@ -90,35 +94,42 @@
 
   <section class="page" data-page="starmap" id="pageStarmap" tabindex="-1" hidden>
     <div class="col">
-      <header class="s-bar">
-        <button class="tbtn" id="btnStarmapBack" type="button">返回</button>
-        <span class="s-title">星图 · 历史</span>
+      <header class="sm-top">
+        <button class="sm-back" id="btnStarmapBack" type="button" aria-label="返回对话">‹ 返回</button>
+        <i class="sep"></i>
+        <span class="sm-ttl">星图</span>
+        <i class="sep"></i>
+        <span class="sm-cnt" id="smCnt">共 0 场会话</span>
         <span class="sp"></span>
-        <button class="tbtn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
+        <button class="theme-btn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
       </header>
       <div class="starmap-stage" id="starmapStage">
         <canvas id="smCanvas" class="sm-canvas"></canvas>
         <div class="sm-empty" id="smEmpty" hidden>还没有留下历史星尘<br><small>完成一次会话并「送走」后，光点将在这里显影成星</small></div>
-        <div class="sm-foot" id="smFoot">
-          <div class="sm-legend">
-            <span>光点大小 ＝ 消息数</span>
+        <div class="foot" id="smFoot">
+          <span class="hint">拖动旋转　上下倾斜　轻点星空</span>
+          <div class="legend">
+            <span class="g"><i class="d" style="width:3px;height:3px"></i><i class="d" style="width:8px;height:8px"></i>消息数</span>
             <i class="sep"></i>
-            <span>越亮越近</span>
+            <span class="g"><i class="d" style="width:5px;height:5px;opacity:.3"></i><i class="d" style="width:5px;height:5px"></i>越亮越近</span>
           </div>
         </div>
       </div>
-      <div class="sm-card" id="smCard" hidden>
-        <div class="sm-ch">
-          <span class="sm-cno" id="smCno">No.----</span>
-          <span class="sp"></span>
-          <button class="tbtn" id="smCardClose" type="button">收起</button>
+      <div class="card" id="smCard" role="dialog" aria-labelledby="smCno">
+        <div class="in" id="smCardIn">
+          <div class="ch">
+            <span class="cn">No.</span>
+            <span class="cno" id="smCno">----</span>
+            <span class="sp"></span>
+            <button class="ab" id="smCardClose" type="button">收起</button>
+          </div>
+          <div class="ct" id="smMeta"></div>
+          <div class="cm"><span id="smMsg">共 0 段</span><i class="sep"></i><span id="smDeck"></span></div>
         </div>
-        <div class="sm-meta" id="smMeta">2026.11.26 · 14:00</div>
-        <div class="sm-sub" id="smSub">共 12 段 · 字卡</div>
-        <div class="sm-actions">
-          <button class="cb" id="smBtnView" type="button">查看全篇</button>
+        <div class="ca">
+          <button class="cb" id="smBtnReplay" type="button">回放</button>
           <i class="sep"></i>
-          <button class="cb" id="smBtnReplay" type="button">回放重现</button>
+          <button class="cb" id="smBtnView" type="button">展开全篇</button>
         </div>
       </div>
     </div>
