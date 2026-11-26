@@ -1,0 +1,169 @@
+/* 礼物卡片（对话页用）——规格照参考稿 gift-mock.html 的 D 段：
+   75×75 正方卡面（≈4.4 × 17px）、正面 30×30 图形 + 名字、背面顶部小字名字 + 含义（超出淡出）、
+   0.7s 绕 Y 轴翻面、一次只翻一张、减少动效（系统 prefers-reduced-motion 或 html.rm）时不翻转直接换面。
+   只放这张卡；挂在哪、什么时候用由对话页决定。 */
+
+.gcard {
+  position: relative;
+  display: inline-block;
+  width: 75px;
+  height: 75px;
+  margin: 6px 0.38em;
+  vertical-align: middle;
+  -webkit-perspective: 600px;
+  perspective: 600px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gcard-in {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.gcard.flipped .gcard-in {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+.gcard:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+.gcard:focus:not(:focus-visible) { outline: none; }
+
+.gf, .gb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  border: 1px solid var(--hair);
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background: var(--bg);
+  box-shadow: 0 6px 18px var(--glow2);
+}
+
+/* 正面 */
+.gf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px 6px;
+}
+
+.gf-ico {
+  width: 30px;
+  height: 30px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gf-ico svg { width: 30px; height: 30px; display: block; }
+
+.gf-nm {
+  margin-top: 6px;
+  max-width: 100%;
+  font-size: 10.5px;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 背面 */
+.gb {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px 5px 5px;
+  border-color: var(--ink2);
+}
+
+.gb-nm {
+  flex-shrink: 0;
+  max-width: 100%;
+  margin-bottom: 3px;
+  font-size: 9.5px;
+  line-height: 1.2;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gb-tx {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  font-size: 12.5px;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  color: var(--ink2);
+  text-align: center;
+  overflow: hidden;
+  word-break: break-all;
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* 放大对照（只在试验页用，正式对话页不挂） */
+.gcard.tall { width: 136px; height: 142px; }
+.gcard.tall .gb { padding: 10px 10px 8px; }
+.gcard.tall .gb-nm { margin-bottom: 5px; }
+.gcard.tall .gb-tx {
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, #000 78%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* 减少动效：整个翻面取消，直接换面（和参考稿一致） */
+@media (prefers-reduced-motion: reduce) {
+  .gcard-in {
+    transition: none !important;
+    -webkit-transform: none !important;
+    transform: none !important;
+  }
+
+  .gb {
+    -webkit-transform: none !important;
+    transform: none !important;
+    display: none;
+  }
+
+  .gcard.flipped .gf { display: none; }
+  .gcard.flipped .gb { display: flex; }
+}
+
+html.rm .gcard-in {
+  transition: none !important;
+  -webkit-transform: none !important;
+  transform: none !important;
+}
+
+html.rm .gb {
+  -webkit-transform: none !important;
+  transform: none !important;
+  display: none;
+}
+
+html.rm .gcard.flipped .gf { display: none; }
+html.rm .gcard.flipped .gb { display: flex; }

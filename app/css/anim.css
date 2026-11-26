@@ -1,0 +1,34 @@
+/* 动效层
+   M1 只用到：开场文字的呼吸、设置分组的淡入。
+   落卡、解码、褪色、火焰抖动在 M3/M4 随对话页一起进来；烛焰本身是 Canvas 噪声，不用这里的关键帧。 */
+
+@keyframes rtPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rt { animation: rtPulse 2.6s ease-in-out infinite; }
+.group { animation: fadeUp 0.5s ease both; }
+.group:nth-of-type(2) { animation-delay: 0.06s; }
+.group:nth-of-type(3) { animation-delay: 0.12s; }
+.group:nth-of-type(4) { animation-delay: 0.18s; }
+
+/* 双开关：系统偏好 或 界面里的“减少动效” */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+}
+
+html.rm *, html.rm *::before, html.rm *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+}

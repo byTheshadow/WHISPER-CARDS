@@ -1,0 +1,343 @@
+/* 牌库页（视觉照着 F:\参考html\decks.html 落）
+   基线 Chrome 61：不用 flex gap、inset 简写、clamp；毛玻璃只在 @supports 里加。
+   只放这个页面的样式；纸面与控件变量在 theme.css / base.css。 */
+
+.d-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.d-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  padding-bottom: calc(40px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+.sum { margin: 10px 0 18px; font-size: 11.5px; letter-spacing: 0.3em; color: var(--mute); }
+
+.dk {
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  padding: 22px 20px 6px;
+  margin-bottom: 18px;
+  background: var(--bg);
+  box-shadow: 0 6px 18px var(--glow2);
+}
+
+.dh { display: flex; align-items: baseline; }
+
+.dn { font-size: 15px; letter-spacing: 0.3em; font-weight: 400; }
+
+.dm { margin-left: auto; font-size: 11px; letter-spacing: 0.2em; color: var(--mute); white-space: nowrap; }
+
+.isep { display: inline-block; width: 1px; height: 10px; background: var(--hair); margin: 0 12px; vertical-align: -1px; }
+
+.th { min-height: 50px; padding: 13px 0 12px; display: flex; align-items: center; flex-wrap: wrap; }
+
+/* 卡片预览是"索引"不是正文：字号压到 13px，去掉那圈光晕，只留一点字色差。
+   17px 的正文视觉（对话页 .line）放在这里会把整张卡撑脏。 */
+.mw {
+  display: inline-block;
+  margin-right: 1.15em;
+  font-size: 13px;
+  line-height: 2;
+  letter-spacing: 0.08em;
+  color: var(--ink2);
+}
+
+.mw.sp::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 0.5em;
+  vertical-align: 0.28em;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+}
+
+.mi { display: inline-block; width: 48px; height: 48px; border-radius: 3px; border: 1px solid var(--hair); margin-right: 10px; vertical-align: top; object-fit: cover; background: var(--bg); }
+
+.mt {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 62px;
+  margin-right: 10px;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  background: var(--bg);
+  box-shadow: 0 0 14px var(--glow2);
+  vertical-align: top;
+}
+
+.mt .n { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 8px; letter-spacing: 0.2em; color: var(--mute); }
+.mt .m { position: absolute; top: 24px; left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: 0.06em; color: var(--ink2); text-shadow: 0 0 8px var(--glow); }
+.mt .p { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 7.5px; letter-spacing: 0.3em; color: var(--mute); }
+
+.mt.back {
+  background: repeating-linear-gradient(135deg, var(--hair), var(--hair) 1px, rgba(0, 0, 0, 0) 1px, rgba(0, 0, 0, 0) 6px), var(--bg);
+}
+
+.emp { font-size: 12px; letter-spacing: 0.2em; color: var(--mute); line-height: 1.9; }
+
+.d-note { margin: 6px 0 0; font-size: 11px; line-height: 1.8; letter-spacing: 0.04em; color: var(--mute); }
+
+.da { display: flex; align-items: center; border-top: 1px solid var(--hair); }
+
+.ab { background: none; border: 0; font-size: 12px; letter-spacing: 0.24em; padding: 14px 0; font-weight: 400; color: var(--ink); transition: opacity 0.5s; }
+.ab:disabled { opacity: 0.24; cursor: default; }
+.da .ab.r { margin-left: auto; }
+.ab:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+.ab:focus:not(:focus-visible) { outline: none; }
+
+.sep { display: block; width: 1px; height: 14px; background: var(--hair); margin: 0 14px; }
+
+/* 全屏覆盖层 */
+
+.ov {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+  animation: ovIn 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ov[hidden] { display: none; }
+
+@keyframes ovIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ovc { width: 100%; max-width: 560px; height: 100%; padding: 0 24px; display: flex; flex-direction: column; min-height: 0; }
+
+.ov-top {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 10px;
+  padding-top: calc(var(--nav-h) + 8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+}
+
+.ov-ttl { font-size: 13px; letter-spacing: 0.6em; font-weight: 400; }
+.ov-ttl small { font-size: 11px; letter-spacing: 0.3em; color: var(--mute); font-weight: 300; margin-left: 4px; }
+
+.ov-sp { flex: 1; }
+
+.ov-tbtn { background: none; border: 0; font-size: 12.5px; letter-spacing: 0.24em; padding: 10px 0 10px 18px; font-weight: 400; color: var(--ink); }
+.ov-tbtn:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+.ov-tbtn:focus:not(:focus-visible) { outline: none; }
+
+.hint { margin: 18px 0 14px; font-size: 12px; letter-spacing: 0.3em; color: var(--mute); }
+
+.ta {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  resize: none;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.85;
+  letter-spacing: 0.06em;
+  padding: 14px 16px;
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color 0.6s;
+}
+
+.ta:focus { border-color: var(--mute); }
+.ta::placeholder { color: var(--mute); letter-spacing: 0.3em; }
+
+.fb { display: flex; align-items: center; min-height: 44px; font-size: 11px; letter-spacing: 0.26em; color: var(--ink2); white-space: nowrap; overflow: hidden; }
+.fb .sep { margin: 0 12px; }
+.fb .q { color: var(--mute); }
+
+.ctl { display: flex; align-items: center; padding: 8px 0 18px; padding-bottom: calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
+
+.cb { flex: 1; height: 48px; font-size: 13px; letter-spacing: 0.46em; padding-left: 0.46em; font-weight: 400; color: var(--ink); border-radius: 3px; transition: opacity 0.5s; background: none; border: 0; }
+.cb.solid { margin-left: 14px; background: var(--ink); color: var(--bg); }
+.cb:disabled { opacity: 0.24; cursor: default; }
+.cb:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+.cb:focus:not(:focus-visible) { outline: none; }
+
+/* 选图 */
+
+.cnt { display: flex; align-items: baseline; margin-bottom: 16px; font-size: 12px; letter-spacing: 0.26em; }
+.cnt small { margin-left: auto; font-size: 10.5px; letter-spacing: 0.2em; color: var(--mute); }
+
+.gw { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-top: 8px; margin-right: -8px; }
+
+.im, .add {
+  position: relative;
+  display: inline-block;
+  width: 76px;
+  height: 76px;
+  margin: 0 8px 8px 0;
+  border-radius: 3px;
+  border: 1px solid var(--hair);
+  vertical-align: top;
+  background: var(--bg);
+}
+
+.im img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+
+.im.mat { animation: mat 1.1s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.im.gone { animation: gone 0.65s ease-in forwards; }
+
+@keyframes mat {
+  0% { opacity: 0; transform: scale(1.12); -webkit-filter: blur(10px); filter: blur(10px); }
+  100% { opacity: 1; transform: none; -webkit-filter: blur(0); filter: blur(0); }
+}
+
+@keyframes gone {
+  to { opacity: 0; transform: scale(1.14); -webkit-filter: blur(12px); filter: blur(12px); }
+}
+
+.x { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); box-shadow: 0 6px 18px var(--glow2); border: 0; }
+.x::before, .x::after { content: ""; position: absolute; top: 9.5px; left: 5px; width: 10px; height: 1px; background: var(--bg); transform: rotate(45deg); }
+.x::after { transform: rotate(-45deg); }
+.x:focus { outline: 1px solid var(--mute); outline-offset: 2px; }
+
+.add { color: var(--mute); background: none; }
+.add::before, .add::after { content: ""; position: absolute; top: 26px; left: 37px; width: 1px; height: 14px; background: currentColor; }
+.add::after { top: 32.5px; left: 30.5px; width: 14px; height: 1px; }
+.add span { position: absolute; bottom: 9px; left: 0; right: 0; text-align: center; font-size: 9.5px; letter-spacing: 0.3em; padding-left: 0.3em; }
+.add:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+/* 牌库页顶栏：返回 + 居中标题 + 主题 */
+.s-bar .sp { flex: 1; }
+
+/* 「全部」卡牌列表 */
+
+.more {
+  margin-left: 12px;
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid var(--hair);
+  background: none;
+  color: var(--ink2);
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  transition: border-color 0.4s, color 0.4s;
+}
+
+.more:disabled { opacity: 0.24; cursor: default; border-bottom-color: transparent; }
+
+.more:focus { outline: 1px solid var(--mute); outline-offset: 3px; }
+.more:focus:not(:focus-visible) { outline: none; }
+
+.ac {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.ac:first-child { border-top: 0; }
+
+.ac__i {
+  width: 56px;
+  height: 56px;
+  margin-right: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--hair);
+  background: var(--bg);
+  object-fit: cover;
+  flex: 0 0 56px;
+}
+
+.ac__n { flex: 0 0 62px; font-size: 10.5px; letter-spacing: 0.18em; color: var(--mute); }
+.ac__m { flex: 0 0 88px; font-size: 14px; letter-spacing: 0.1em; }
+.ac__p { flex: 1; font-size: 11.5px; line-height: 1.7; letter-spacing: 0.04em; color: var(--mute); }
+.ac__t { flex: 1; min-width: 0; line-height: 1.7; word-break: break-word; }
+/* ---------- 礼物（特殊卡的第三种卡片）----------
+   卡面预览 24×24、弹层选择格 56×56（图形 28）、全部列表 40×40。
+   图形是内联 SVG（currentColor），深浅色自动跟着走，不额外发请求。 */
+
+.mg { display: inline-block; width: 24px; height: 24px; margin-right: 12px; vertical-align: middle; color: var(--ink2); }
+.mg svg { width: 24px; height: 24px; display: block; }
+
+/* overflow-x 必须显式 hidden：只写 overflow-y:auto 时浏览器会把另一轴变成 auto，
+   .igrid 的 -5px 外边距于是撑出一条横向滚动条（就是弹层底部那条灰杠）。 */
+.gscroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+.igrid { display: flex; flex-wrap: wrap; margin: 0 -5px 2px; }
+
+.icell {
+  width: 56px;
+  height: 56px;
+  margin: 0 5px 10px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  background: none;
+  color: var(--ink2);
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.icell svg { width: 28px; height: 28px; display: block; }
+.icell.on { border-color: var(--ink); color: var(--ink); }
+.icell:focus { outline: 1px solid var(--mute); outline-offset: 2px; }
+.icell:focus:not(:focus-visible) { outline: none; }
+
+.flbl {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--mute);
+}
+
+.inp {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  padding: 12px 14px;
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color 0.5s;
+}
+
+.inp:focus { border-color: var(--mute); }
+.inp::placeholder { color: var(--mute); letter-spacing: 0.3em; }
+
+.ta.gift-ta { flex: 0 0 auto; height: 116px; }
+
+.fsub { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; letter-spacing: 0.06em; color: var(--mute); }
+
+/* 全部列表里的礼物条目 */
+.ac__i.gift { display: flex; align-items: center; justify-content: center; color: var(--ink2); border-color: rgba(0, 0, 0, 0); background: none; }
+.ac__i.gift svg { width: 40px; height: 40px; display: block; }
+.ac__g { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ac__gn { font-size: 14px; line-height: 1.7; letter-spacing: 0.08em; }
+.ac__g .ac__p { flex: 0 0 auto; margin-top: 2px; }
+
+/* 特殊卡操作行多了「加礼物」，320 宽下自然折行，别硬挤 */
+.da { flex-wrap: wrap; }

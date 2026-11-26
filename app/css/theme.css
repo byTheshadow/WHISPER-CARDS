@@ -1,0 +1,43 @@
+/* 主题层：浅/深两套变量 + 毛玻璃增强（必须有实色降级）
+   变量只在这里定义；组件样式只引用变量，所以切换主题不需要第二套组件 CSS。 */
+
+:root {
+  --nav-h: 44px;
+  --bg: #f4f4f2;
+  --ink: #121214;
+  --ink2: rgba(18, 18, 20, 0.8);
+  --glow: rgba(0, 0, 0, 0.26);
+  --glow2: rgba(0, 0, 0, 0.11);
+  --mute: rgba(18, 18, 20, 0.4);
+  --hair: rgba(18, 18, 20, 0.14);
+  --sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html.dark {
+  --bg: #0b0b0d;
+  --ink: #f1f1f3;
+  --ink2: rgba(241, 241, 243, 0.82);
+  --glow: rgba(255, 255, 255, 0.34);
+  --glow2: rgba(255, 255, 255, 0.13);
+  --mute: rgba(241, 241, 243, 0.4);
+  --hair: rgba(241, 241, 243, 0.16);
+}
+
+/* 内容页（设置 / 牌库）用不透明纸面：参考稿本身就是 body 底色，
+   星屑只在对话页当氛围。顶栏那条实色底也因此接得上。 */
+.page[data-page="settings"],
+.page[data-page="decks"] { background: var(--bg); transition: background-color 0.9s; }
+
+/* 设置页顶栏：实色底是基线，能模糊时才叠一层 */
+.s-bar { background: var(--bg); }
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .s-bar {
+    background: rgba(244, 244, 242, 0.78);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+  }
+  html.dark .s-bar {
+    background: rgba(11, 11, 13, 0.72);
+  }
+}

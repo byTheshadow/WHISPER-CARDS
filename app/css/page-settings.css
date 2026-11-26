@@ -1,0 +1,252 @@
+/* 设置页（P3）
+   视觉照着 F:\参考html\settings.html 落：分节小标 + hair 横线的行 + 右对齐的控件。
+   基线 Chrome 61：不用 flex gap / inset 简写 / clamp；毛玻璃只在 @supports 里增强，必须有实色降级。
+   只放这个页面的样式；纸面、控件、变量在 theme.css / base.css。 */
+
+/* 行组：组底一条 hair，行与行之间靠 .row 自己的 border-top */
+.rows { border-bottom: 1px solid var(--hair); }
+
+/* 可点的行（牌堆三行）：div 冒充按钮，所以按钮该有的重置自己来 */
+.row--tap {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.35s;
+}
+
+.row--tap:active { opacity: 0.55; }
+
+.row--tap:focus { outline: 1px solid var(--mute); outline-offset: 2px; }
+.row--tap:focus:not(:focus-visible) { outline: none; }
+
+.row__go {
+  flex: 0 0 auto;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: var(--ink2);
+  padding-top: 1px;
+}
+
+/* 危险操作那一行：文案压暗，按钮不抢眼 */
+.row.danger .row__label { color: var(--mute); }
+.row.danger .row__label small { color: var(--mute); }
+
+/* 折叠（P3 用不到，语气节等 M3；先备好，别到用时再写一份） */
+.fold__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-top: 1px solid var(--hair);
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+}
+
+.fold__panel { height: 0; overflow: hidden; transition: height 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.fold__in { padding-top: 2px; }
+
+/* 折叠头里的说明：.row small 只管 .row，折叠头不是 .row，这里补一份 */
+.fold__head .row__label small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+/* 关于：排版克制到像一张说明书 */
+.about { padding: 26px 0 10px; text-align: center; }
+
+.about div {
+  font-size: 11px;
+  line-height: 2.2;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+}
+
+.about .v { font-size: 12px; letter-spacing: 0.34em; color: var(--ink2); }
+
+/* 副标题：品类 + 英文，小一号，跟在主名下面 */
+.about .sub {
+  margin-top: 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  color: var(--mute);
+}
+
+.about .note {
+  margin: 18px 0 0;
+  font-size: 10.5px;
+  line-height: 1.9;
+  letter-spacing: 0.05em;
+  color: var(--mute);
+}
+
+/* ---------- 按住确认：底部弹层 ----------
+   实色降级在前，毛玻璃只在支持时增强；进度条 1.2s 走满，松手才生效。 */
+
+.hk {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  visibility: hidden;
+  transition: visibility 0s 0.7s;
+}
+
+.hk.on { visibility: visible; transition: visibility 0s; }
+
+.hk__scrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.hk.on .hk__scrim { opacity: 0.88; }
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hk__scrim {
+    background: rgba(244, 244, 242, 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  html.dark .hk__scrim { background: rgba(11, 11, 13, 0.55); }
+  .hk.on .hk__scrim { opacity: 1; }
+}
+
+.hk__pn {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 30px 24px 20px;
+  padding-bottom: calc(20px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: var(--bg);
+  border-top: 1px solid var(--hair);
+  box-shadow: 0 -6px 18px var(--glow2);
+  transform: translateY(105%);
+  transition: transform 0.62s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.hk.on .hk__pn { transform: none; }
+
+.hk__t { font-size: 13px; letter-spacing: 0.5em; font-weight: 400; }
+
+.hk__b {
+  margin: 16px 0 26px;
+  font-size: 14.5px;
+  line-height: 1.85;
+  letter-spacing: 0.06em;
+  color: var(--ink2);
+}
+
+.hk__hold {
+  display: block;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 13px;
+  letter-spacing: 0.46em;
+  padding-left: 0.46em;
+  font-weight: 400;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.hk__hold:disabled { opacity: 0.6; }
+
+.hk__bar {
+  position: relative;
+  height: 1px;
+  margin-top: 10px;
+  background: var(--hair);
+  overflow: hidden;
+}
+
+.hk__bar i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.hk__h {
+  min-height: 1em;
+  margin-top: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--mute);
+  text-align: center;
+}
+
+.hk__cancel {
+  display: block;
+  margin: 8px auto 0;
+  padding: 12px 20px 12px 26px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0.46em;
+  font-weight: 400;
+}
+
+.hk__cancel:focus { outline: 1px solid var(--mute); outline-offset: 2px; }
+.hk__cancel:focus:not(:focus-visible) { outline: none; }
+/* ---------- 步进器（连接 / 语气两节） ----------
+   纯文字按钮的「− 值 ＋」；值用等宽数字，免得加减时左右跳。 */
+
+.stp { display: flex; align-items: center; flex: 0 0 auto; }
+
+.stp__b {
+  background: none;
+  border: 0;
+  padding: 4px 10px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stp__b:disabled { color: var(--mute); opacity: 0.45; }
+
+.stp__b:focus { outline: 1px solid var(--mute); outline-offset: 2px; }
+.stp__b:focus:not(:focus-visible) { outline: none; }
+
+.stp__v {
+  min-width: 46px;
+  text-align: center;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* 语气节的提示行：只在越界时出现，别一直占着 */
+.tone-note {
+  padding: 10px 0 0;
+  font-size: 10.5px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+.tone-note:empty { display: none; }
