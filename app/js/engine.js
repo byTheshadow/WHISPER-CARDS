@@ -29,10 +29,10 @@
 
   function rng() { return O.rng; }
 
-  /* 把三堆牌摊平成一个数组：{ deck, kind, ... }。空堆不参与加权。 */
+  /* 把所有非空牌堆摊平成一个数组：{ deck, kind, ... }。支持动态新增与删除的任意牌堆。 */
   function collect(decks) {
     var out = [];
-    var keys = ['word', 'special', 'tarot'];
+    var keys = Object.keys(decks || {});
     var i;
     var j;
     var deck;
@@ -48,16 +48,16 @@
   }
 
   function normalize(deck, item) {
-    if (deck === 'tarot') {
+    if (deck === 'tarot' || (item && (item.kind === 'tarot' || item.upright != null))) {
       return {
-        deck: 'tarot',
+        deck: deck,
         kind: 'tarot',
-        num: item.num || '',
-        name: item.name || '',
-        upright: item.upright || '',
-        reversed: item.reversed || '',
+        num: (item && item.num) || '',
+        name: (item && item.name) || '',
+        upright: (item && item.upright) || '',
+        reversed: (item && item.reversed) || '',
         side: rng().chance(0.5) ? 'reversed' : 'upright',
-        image: item.image || ''
+        image: (item && item.image) || ''
       };
     }
     if (item && item.kind === 'gift') {

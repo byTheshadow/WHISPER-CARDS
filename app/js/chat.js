@@ -236,13 +236,41 @@
   }
 
   function renderMe() {
-    if (s.mode !== 'me') { return; }
+    if (s.mode !== 'me') {
+      if (refs.draft) {
+        var dv = refs.say.value;
+        if (dv.length > 0) {
+          refs.draft.hidden = false;
+          refs.draft.textContent = dv;
+        } else {
+          refs.draft.hidden = true;
+          refs.draft.textContent = '';
+        }
+      }
+      return;
+    }
+    if (refs.draft) { refs.draft.hidden = true; refs.draft.textContent = ''; }
+    if (refs.gazeRipples) {
+      if (refs.say.value.length > 0 && s.focused) {
+        refs.gazeRipples.classList.add('active');
+      } else {
+        refs.gazeRipples.classList.remove('active');
+      }
+    }
     clearLine();
     refs.line.className = 'line me';
     var chars = Array.prototype.slice.call(refs.say.value);
     if (!chars.length) {
-      if (s.focused) { refs.line.appendChild(el('span', 'ch-caret')); }
-      else if (!s.locked) { refs.line.appendChild(el('span', 'ph', '轻触此处书写')); }
+      if (s.focused) {
+        refs.line.appendChild(el('span', 'ch-caret'));
+      } else if (s.history.length === 0 && s.pending === 0) {
+        var eg = el('div', 'empty-guide');
+        eg.appendChild(el('span', 'eg-title', '轻触此处书写想说的话'));
+        eg.appendChild(el('span', 'eg-step', '先「放上板」 · 再「递出」向虚空'));
+        refs.line.appendChild(eg);
+      } else {
+        refs.line.appendChild(el('span', 'ph', '轻触此处书写'));
+      }
       s.prev = chars;
       return;
     }
@@ -274,19 +302,38 @@
 
   function setButtons() {
     var has = refs.say.value.replace(/^\s+|\s+$/g, '').length > 0;
-    refs.btnPlace.disabled = s.locked || !has;
-    refs.btnHand.disabled = s.locked || (!has && s.pending === 0);
-    refs.pend.textContent = (!s.locked && s.pending > 0) ? ('已放上板 ' + s.pending + ' 段') : '';
+    refs.btnPlace.disabled = !has;
+    refs.btnHand.disabled = s.running || (!has && s.pending === 0);
+    refs.pend.textContent = (s.pending > 0) ? ('已放上板 ' + s.pending + ' 段') : '';
+
+    if (has && !refs.btnPlace.disabled) {
+      refs.btnPlace.classList.add('guide-place');
+    } else {
+      refs.btnPlace.classList.remove('guide-place');
+    }
+    if (s.pending > 0 && !refs.btnHand.disabled) {
+      refs.btnHand.classList.add('guide-hand');
+    } else {
+      refs.btnHand.classList.remove('guide-hand');
+    }
   }
 
   function place() {
     var txt = refs.say.value.replace(/^\s+|\s+$/g, '');
-    if (!txt || s.locked) { return; }
+    if (!txt) { return; }
     var item = record('me', { text: txt });
     var seg = textSeg(txt, 'me');
     var after = function () {
       refs.say.value = '';
       s.prev = [];
+      if (refs.draft) { refs.draft.hidden = true; refs.draft.textContent = ''; }
+    if (refs.gazeRipples) {
+      if (refs.say.value.length > 0 && s.focused) {
+        refs.gazeRipples.classList.add('active');
+      } else {
+        refs.gazeRipples.classList.remove('active');
+      }
+    }
       renderMe();
     };
     if (s.restoring) {
@@ -303,11 +350,10 @@
   }
 
   function hand() {
-    if (s.locked) { return; }
+    if (s.running) { return; }
     if (refs.say.value.replace(/^\s+|\s+$/g, '').length) { place(); }
     if (s.pending === 0) { return; }
     s.pending = 0;
-    refs.say.blur();
     startRound();
   }
 
@@ -329,6 +375,11 @@
     s.locked = true;
     s.mode = 'wait';
     clearLine();
+    refs.line.className = 'line wait';
+    var sense = el('div', 'ch-sensing');
+    sense.appendChild(el('span', 'cs-orb'));
+    sense.appendChild(el('span', 'cs-text', '对方正在感知…'));
+    refs.line.appendChild(sense);
     setButtons();
     if (hooks && hooks.light) { hooks.light(); }
     s.plan = plan;
@@ -765,8 +816,20 @@
   function mount(r, h) {
     refs = r;
     hooks = h || {};
-    refs.say.addEventListener('focus', function () { s.focused = true; renderMe(); });
-    refs.say.addEventListener('blur', function () { s.focused = false; renderMe(); });
+    refs.say.addEventListener('focus', function () {
+      s.focused = true;
+      renderMe();
+      if (refs.gazeRipples && refs.say.value.length > 0) {
+        refs.gazeRipples.classList.add('active');
+      }
+    });
+    refs.say.addEventListener('blur', function () {
+      s.focused = false;
+      renderMe();
+      if (refs.gazeRipples) {
+        refs.gazeRipples.classList.remove('active');
+      }
+    });
     refs.say.addEventListener('input', function () { renderMe(); setButtons(); });
     refs.say.addEventListener('keydown', function (e) {
       if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey && !e.isComposing) {
@@ -775,7 +838,7 @@
       }
     });
     refs.now.addEventListener('click', function () {
-      if (s.mode === 'me' && !s.locked) { refs.say.focus(); }
+      refs.say.focus();
     });
     refs.btnPlace.addEventListener('click', place);
     refs.btnHand.addEventListener('click', hand);

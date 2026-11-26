@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="./css/page-settings.css">
 <link rel="stylesheet" href="./css/gift-card.css">
 <link rel="stylesheet" href="./css/page-chat.css">
+<link rel="stylesheet" href="./css/page-starmap.css">
 </head>
 <body>
 
@@ -24,7 +25,7 @@
   <section class="page" data-page="chat" id="pageChat" tabindex="-1">
     <div class="col">
       <header class="top">
-        <span id="sessNo">No.----</span>
+        <button class="tbtn" id="btnStarmap" type="button" aria-label="查看星图与历史">星图</button><span id="sessNo">No.----</span>
         <span class="sp"></span>
         <button class="tbtn" id="btnReveal" type="button" aria-label="按住显影" aria-pressed="false">显影</button>
         <button class="tbtn" id="btnSendAway" type="button">送走</button>
@@ -36,8 +37,14 @@
           <div class="inner">
             <div class="hist" id="hist"></div>
             <div class="now" id="now">
+              <div class="gaze-ripple-wrap" id="gazeRipples" aria-hidden="true">
+                <div class="rip r1"></div>
+                <div class="rip r2"></div>
+                <div class="rip r3"></div>
+              </div>
               <input class="say-in" id="say" type="text" autocomplete="off" aria-label="在板上书写">
               <div class="line" id="line"></div>
+              <div class="my-draft" id="myDraft" hidden></div>
             </div>
           </div>
         </div>
@@ -150,6 +157,27 @@
   </div>
 </div>
 
+<div class="ov" id="ovSession" role="dialog" aria-modal="true" aria-labelledby="sessTitle" hidden>
+  <div class="ovc">
+    <div class="ov-top">
+      <span class="ov-ttl" id="sessTitle">会话详情</span>
+      <span class="ov-sp"></span>
+      <button class="ov-tbtn" id="sessClose" type="button">关闭</button>
+    </div>
+    <div class="sess-replay-bar" id="sessReplayBar" hidden>
+      <button class="sess-play-btn" id="sessPlayBtn" type="button">播放</button>
+      <div class="sess-track" id="sessTrack">
+        <div class="sess-fill" id="sessFill"></div>
+        <div class="sess-knob" id="sessKnob"></div>
+      </div>
+      <span class="sess-clk" id="sessClk">00:00</span>
+    </div>
+    <div class="sess-body">
+      <div class="sess-hist" id="sessHist"></div>
+    </div>
+  </div>
+</div>
+
 <div id="ritual">
   <canvas id="cvBig"></canvas>
   <div class="rt" id="rt">连接中</div>
@@ -173,6 +201,7 @@
 <script src="./js/sfx.js"></script>
 <script src="./js/decks.js"></script>
 <script src="./js/settings.js"></script>
+<script src="./js/starmap.js"></script>
 <script src="./js/app.js"></script>
 </body>
 </html>

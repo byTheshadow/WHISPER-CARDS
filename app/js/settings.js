@@ -53,34 +53,185 @@
      都是引擎真在用的参数：win 是 engine.plan 的时长窗口，sil 是沉默轮的概率。
      「对方主动开口」这一项先不放出——引擎还没有这条路径（prefs.open 只存不用）。 */
 
+  /* 心电/声波区间滑块组件（双滑块：最短与最长） */
+  function waveRangeCtl(options) {
+    var min = options.min || 1;
+    var max = options.max || 30;
+    var values = options.values ? options.values.slice(0) : [2, 5];
+    var onChange = options.onChange;
+
+    var wrap = el('div', 'wave-box');
+    var badge = el('div', 'wave-badge');
+    var txtMin = el('span', 'wv-val', String(values[0]));
+    var txtMax = el('span', 'wv-val', String(values[1]));
+    badge.appendChild(doc.createTextNode('等待区间：'));
+    badge.appendChild(txtMin);
+    badge.appendChild(doc.createTextNode(' 分钟 至 '));
+    badge.appendChild(txtMax);
+    badge.appendChild(doc.createTextNode(' 分钟'));
+    wrap.appendChild(badge);
+
+    var trackWrap = el('div', 'wave-track');
+    var cv = doc.createElement('canvas');
+    cv.className = 'wave-cv';
+    cv.width = 460;
+    cv.height = 48;
+    trackWrap.appendChild(cv);
+
+    var fill = el('div', 'wave-fill');
+    var tMin = el('div', 'wave-thumb min');
+    var tMax = el('div', 'wave-thumb max');
+    trackWrap.appendChild(fill);
+    trackWrap.appendChild(tMin);
+    trackWrap.appendChild(tMax);
+    wrap.appendChild(trackWrap);
+
+    var ticks = el('div', 'wave-ticks');
+    ticks.appendChild(el('span', null, '1分'));
+    ticks.appendChild(el('span', null, '5分'));
+    ticks.appendChild(el('span', null, '10分'));
+    ticks.appendChild(el('span', null, '15分'));
+    ticks.appendChild(el('span', null, '20分'));
+    ticks.appendChild(el('span', null, '30分'));
+    wrap.appendChild(ticks);
+
+    function drawWave() {
+      var ctx = cv.getContext('2d');
+      var w = cv.width;
+      var h = cv.height;
+      var mid = h / 2;
+      ctx.clearRect(0, 0, w, h);
+
+      var isDark = doc.documentElement.classList.contains('dark');
+      var bgStroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(18,18,20,0.16)';
+      var activeStroke = isDark ? '#ffd166' : '#c98a1a';
+
+      var p1 = (values[0] - min) / (max - min);
+      var p2 = (values[1] - min) / (max - min);
+      var x1 = p1 * w;
+      var x2 = p2 * w;
+
+      ctx.beginPath();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = bgStroke;
+      for (var x = 0; x <= w; x++) {
+        var ang = (x / w) * Math.PI * 18;
+        var beat = Math.sin(ang) * 4;
+        if ((x % 60) > 24 && (x % 60) < 36) {
+          beat += Math.sin((x % 60 - 30) / 6 * Math.PI) * 16;
+        }
+        var y = mid + beat;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = activeStroke;
+      for (var xx = Math.floor(x1); xx <= Math.ceil(x2); xx++) {
+        var a = (xx / w) * Math.PI * 18;
+        var b = Math.sin(a) * 4;
+        if ((xx % 60) > 24 && (xx % 60) < 36) {
+          b += Math.sin((xx % 60 - 30) / 6 * Math.PI) * 16;
+        }
+        var yy = mid + b;
+        if (xx === Math.floor(x1)) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+    }
+
+    function sync() {
+      var p1 = (values[0] - min) / (max - min);
+      var p2 = (values[1] - min) / (max - min);
+      tMin.style.left = (p1 * 100) + '%';
+      tMax.style.left = (p2 * 100) + '%';
+      fill.style.left = (p1 * 100) + '%';
+      fill.style.width = ((p2 - p1) * 100) + '%';
+      txtMin.textContent = String(values[0]);
+      txtMax.textContent = String(values[1]);
+      drawWave();
+    }
+
+    var dragging = null;
+    function onPointerMove(e) {
+      if (!dragging) return;
+      var rect = trackWrap.getBoundingClientRect();
+      var clientX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+      var ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      var val = Math.round(min + ratio * (max - min));
+      if (dragging === 'min') {
+        if (val > values[1]) val = values[1];
+        values[0] = Math.max(min, val);
+      } else if (dragging === 'max') {
+        if (val < values[0]) val = values[0];
+        values[1] = Math.min(max, val);
+      }
+      sync();
+      if (onChange) onChange(values.slice(0));
+    }
+    function onPointerUp() {
+      dragging = null;
+      win.removeEventListener('pointermove', onPointerMove);
+      win.removeEventListener('pointerup', onPointerUp);
+      win.removeEventListener('touchmove', onPointerMove);
+      win.removeEventListener('touchend', onPointerUp);
+    }
+    function startDrag(target, e) {
+      e.preventDefault();
+      dragging = target;
+      win.addEventListener('pointermove', onPointerMove);
+      win.addEventListener('pointerup', onPointerUp);
+      win.addEventListener('touchmove', onPointerMove);
+      win.addEventListener('touchend', onPointerUp);
+    }
+    tMin.addEventListener('pointerdown', function (e) { startDrag('min', e); });
+    tMax.addEventListener('pointerdown', function (e) { startDrag('max', e); });
+    tMin.addEventListener('touchstart', function (e) { startDrag('min', e); });
+    tMax.addEventListener('touchstart', function (e) { startDrag('max', e); });
+
+    trackWrap.addEventListener('click', function (e) {
+      if (e.target === tMin || e.target === tMax) return;
+      var rect = trackWrap.getBoundingClientRect();
+      var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      var val = Math.round(min + ratio * (max - min));
+      var d1 = Math.abs(val - values[0]);
+      var d2 = Math.abs(val - values[1]);
+      if (d1 < d2) {
+        values[0] = Math.min(values[1], Math.max(min, val));
+      } else {
+        values[1] = Math.max(values[0], Math.min(max, val));
+      }
+      sync();
+      if (onChange) onChange(values.slice(0));
+    });
+
+    win.setTimeout(sync, 50);
+
+    return {
+      node: wrap,
+      set: function (newVals) {
+        values = newVals.slice(0);
+        sync();
+      }
+    };
+  }
+
   function connectionSection(st, api, refs) {
     var s = section('连接');
 
-    var rowMin = el('div', 'row');
-    rowMin.appendChild(label('最短等待', '对方隔多久才开口（分钟）'));
-    refs.winMin = O.ui.stepCtl({
-      label: '最短等待', min: 1, max: 15, step: 1, value: st.win[0], unit: ' 分',
+    var rowWave = el('div', 'row wave-row');
+    rowWave.appendChild(label('等待时段', '心电波段滑动 · 调节最短与最长开口间隔'));
+    refs.waveRange = waveRangeCtl({
+      min: 1,
+      max: 30,
+      values: st.win,
       onChange: function (v) {
-        st.win = [v, st.win[1] < v ? v : st.win[1]];
+        st.win = v;
         api.onPref('win', st.win);
-        if (refs.winMax) { refs.winMax.set(st.win[1], true); }
       }
     });
-    rowMin.appendChild(refs.winMin.node);
-    s.rows.appendChild(rowMin);
-
-    var rowMax = el('div', 'row');
-    rowMax.appendChild(label('最长等待', '同一条回复最多等这么久'));
-    refs.winMax = O.ui.stepCtl({
-      label: '最长等待', min: 1, max: 15, step: 1, value: st.win[1], unit: ' 分',
-      onChange: function (v) {
-        st.win = [st.win[0] > v ? v : st.win[0], v];
-        api.onPref('win', st.win);
-        if (refs.winMin) { refs.winMin.set(st.win[0], true); }
-      }
-    });
-    rowMax.appendChild(refs.winMax.node);
-    s.rows.appendChild(rowMax);
+    rowWave.appendChild(refs.waveRange.node);
+    s.rows.appendChild(rowWave);
 
     var rowSil = el('div', 'row');
     rowSil.appendChild(label('沉默', '这一轮对方一个字都不说（0–60%）'));

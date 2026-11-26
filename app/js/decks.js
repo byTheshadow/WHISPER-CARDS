@@ -104,7 +104,8 @@
     var deck = decks[deckKey];
     var card = el('article', 'dk');
     var head = el('div', 'dh');
-    head.appendChild(el('span', 'dn', LABEL[deckKey]));
+    var dName = (deck && deck.name) || LABEL[deckKey] || '自定义牌堆';
+    head.appendChild(el('span', 'dn', dName));
     var meta = el('span', 'dm');
     meta.appendChild(doc.createTextNode(count(deck) + ' 张'));
     meta.appendChild(el('i', 'isep'));
@@ -147,23 +148,64 @@
     clearBtn.addEventListener('click', function () { onClearDeck(deckKey, clearBtn); });
     acts.appendChild(clearBtn);
 
-    var restore = el('button', 'ab r', '恢复内置');
-    restore.type = 'button';
-    restore.disabled = !deck || deck.source === 'builtin';
-    restore.addEventListener('click', function () { restoreDeck(deckKey); });
-    acts.appendChild(restore);
+    if (deckKey === 'word' || deckKey === 'special' || deckKey === 'tarot') {
+      var restore = el('button', 'ab r', '恢复内置');
+      restore.type = 'button';
+      restore.disabled = !deck || deck.source === 'builtin';
+      restore.addEventListener('click', function () { restoreDeck(deckKey); });
+      acts.appendChild(restore);
+    }
+
+    acts.appendChild(el('i', 'sep'));
+    var delBtn = el('button', 'ab del', '删除');
+    delBtn.type = 'button';
+    delBtn.addEventListener('click', function () { onDeleteDeck(deckKey); });
+    acts.appendChild(delBtn);
 
     card.appendChild(acts);
     return card;
   }
 
+  function createNewDeck() {
+    var name = win.prompt('请输入新牌堆名称：', '新牌堆');
+    if (!name || !name.trim()) { return; }
+    name = name.trim();
+    var id = 'deck_' + Date.now().toString(36);
+    decks[id] = {
+      name: name,
+      source: 'custom',
+      updatedAt: Date.now(),
+      items: []
+    };
+    mutateSeq += 1;
+    O.db.saveDecks(decks).then(render);
+  }
+
+  function onDeleteDeck(deckKey) {
+    var deck = decks[deckKey];
+    var name = (deck && deck.name) || LABEL[deckKey] || '此牌堆';
+    var sure = win.confirm('确认完全删除「' + name + '」？此操作不可撤销。');
+    if (!sure) { return; }
+    delete decks[deckKey];
+    mutateSeq += 1;
+    O.db.saveDecks(decks).then(render);
+  }
+
   function render() {
     if (!els.list) { return; }
     els.list.textContent = '';
-    var total = count(decks.word) + count(decks.special) + count(decks.tarot);
-    els.sum.textContent = '三堆洗在一起抽　共 ' + total + ' 张';
+    var keys = Object.keys(decks || {});
+    var total = 0;
     var i;
-    for (i = 0; i < KEYS.length; i++) { els.list.appendChild(deckCard(KEYS[i])); }
+    for (i = 0; i < keys.length; i++) { total += count(decks[keys[i]]); }
+    els.sum.textContent = '共 ' + keys.length + ' 堆洗在一起抽　总计 ' + total + ' 张';
+    for (i = 0; i < keys.length; i++) { els.list.appendChild(deckCard(keys[i])); }
+
+    var newBtn = el('button', 'btn-new-deck', '+ 新建牌堆');
+    newBtn.type = 'button';
+    newBtn.addEventListener('click', createNewDeck);
+    els.list.appendChild(newBtn);
+
     if (O.db.mode() !== 'indexeddb') {
       els.list.appendChild(el('p', 'd-note', '存储：' + O.db.label() + '。系统可能在空间紧张时清理本机数据。'));
     }
@@ -378,7 +420,7 @@
       items = items.slice(0, MAX_CARDS);
     }
     saveDeck(paste.deck, {
-      name: LABEL[paste.deck],
+      name: (deck && deck.name) || LABEL[paste.deck] || "自定义牌堆",
       source: 'paste',
       updatedAt: Date.now(),
       items: items
@@ -512,7 +554,7 @@
   function openAll(deckKey) {
     if (!decks || !decks[deckKey]) { return; }
     var deck = decks[deckKey];
-    els.aDeck.textContent = '· ' + LABEL[deckKey];
+    els.aDeck.textContent = '· ' + ((deck && deck.name) || LABEL[deckKey] || '牌堆');
     els.aCnt.textContent = '共 ' + count(deck) + ' 张';
     els.aList.textContent = '';
     O.ui.openOv(els.ovAll, els.aClose);
@@ -555,7 +597,7 @@
 
   function openImages(deckKey) {
     paste.deck = deckKey;
-    els.iDeck.textContent = '· ' + LABEL[deckKey];
+    els.iDeck.textContent = '· ' + ((decks[deckKey] && decks[deckKey].name) || LABEL[deckKey] || '牌堆');
     els.iGrid.textContent = '';
     picks = [];
     els.iGrid.appendChild(els.iAdd);
@@ -644,7 +686,7 @@
     }
     var prev = decks[paste.deck];
     decks[paste.deck] = {
-      name: LABEL[paste.deck],
+      name: (deck && deck.name) || LABEL[paste.deck] || "自定义牌堆",
       source: 'image',
       updatedAt: Date.now(),
       items: items
@@ -820,7 +862,7 @@
     if (loading) { return loading; }
     var seq = mutateSeq;
     loading = O.db.loadDecks().then(function (data) {
-      if (data && data.word && data.special && data.tarot) {
+      if (data && typeof data === "object" && Object.keys(data).length > 0) {
         decks = data;
         return true;
       }
@@ -848,19 +890,33 @@
     load: load,
     open: open,
     render: render,
-    total: function () { return decks ? count(decks.word) + count(decks.special) + count(decks.tarot) : 0; },
-    counts: function () {
-      return decks ? { word: count(decks.word), special: count(decks.special), tarot: count(decks.tarot) } : { word: 0, special: 0, tarot: 0 };
+    total: function () {
+      if (!decks) { return 0; }
+      var keys = Object.keys(decks);
+      var sum = 0;
+      for (var i = 0; i < keys.length; i++) { sum += count(decks[keys[i]]); }
+      return sum;
     },
-    /* 回合引擎抽卡用：直接给出三堆（只读，别改它）。 */
-    snapshot: function () { return decks || { word: { items: [] }, special: { items: [] }, tarot: { items: [] } }; },
-    /* 牌堆读出来没有：设置页用它决定写「读取中」还是写张数。只读。 */
+    counts: function () {
+      if (!decks) { return {}; }
+      var res = {};
+      var keys = Object.keys(decks);
+      for (var i = 0; i < keys.length; i++) { res[keys[i]] = count(decks[keys[i]]); }
+      return res;
+    },
+    snapshot: function () { return decks || {}; },
     loaded: function () { return decks !== null; },
-    /* 设置页只要「名称 / 张数 / 来源」，别再让它自己拼 label、自己判 source。只读。 */
     meta: function () {
-      return KEYS.map(function (k) {
-        var deck = decks ? decks[k] : null;
-        return { key: k, name: LABEL[k], count: count(deck), source: sourceLabel(deck) };
+      if (!decks) { return []; }
+      var keys = Object.keys(decks);
+      return keys.map(function (k) {
+        var deck = decks[k];
+        return {
+          key: k,
+          name: (deck && deck.name) || LABEL[k] || '自定义牌堆',
+          count: count(deck),
+          source: sourceLabel(deck)
+        };
       });
     }
   };

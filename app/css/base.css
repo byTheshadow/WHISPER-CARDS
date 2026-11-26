@@ -149,6 +149,40 @@ button {
 
 .sep { display: block; width: 1px; height: 14px; background: var(--hair); }
 
+/* 全站按钮与交互反馈（物理微下压 + 弹性回弹） */
+button, .tbtn, .cb, .step__btn, .sw, .s-item, .d-btn, .ov-btn, .hold-btn {
+  transition: transform 0.12s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.2s, background-color 0.2s, color 0.2s;
+  will-change: transform;
+}
+
+button:active:not(:disabled),
+.tbtn:active:not(:disabled),
+.cb:active:not(:disabled),
+.step__btn:active:not(:disabled),
+.ov-btn:active:not(:disabled),
+.sw:active {
+  transform: scale(0.93);
+  opacity: 0.72;
+}
+
+/* 按钮步骤引导呼吸微光 */
+.cb.guide-place {
+  animation: guidePulse 2s ease-in-out infinite;
+}
+.cb.guide-hand {
+  animation: guideHandPulse 2s ease-in-out infinite;
+}
+
+@keyframes guidePulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); text-shadow: 0 0 10px var(--glow); }
+}
+
+@keyframes guideHandPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); text-shadow: 0 0 12px var(--glow), 0 0 24px var(--glow2); }
+}
+
 /* 设置页 */
 
 .s-bar {

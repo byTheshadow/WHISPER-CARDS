@@ -84,6 +84,8 @@
     if (target && target.focus) { target.focus(); }
     if (name === 'settings') { renderSettings(); }
     if (name === 'decks') { O.decks.open(); }
+    if (name === 'starmap' && O.starmap) { O.starmap.open(); }
+    else if (name !== 'starmap' && O.starmap) { O.starmap.close(); }
   }
 
   function tick(ts) {
@@ -269,7 +271,14 @@
     $('btnSendAway').addEventListener('click', function () { ensureAwaySheet().open(); });
     $('btnAgain').addEventListener('click', relight);
     $('btnBack').addEventListener('click', function () { showPage('chat'); });
-    $('btnDecksBack').addEventListener('click', function () { showPage('settings'); });    doc.addEventListener('pointerdown', armSfx, true);
+    $('btnDecksBack').addEventListener('click', function () { showPage('settings'); });
+    if ($('btnStarmap')) { $('btnStarmap').addEventListener('click', function () { showPage('starmap'); }); }
+    if ($('btnStarmapBack')) { $('btnStarmapBack').addEventListener('click', function () { showPage('chat'); }); }
+    if ($('btnStarmapTheme')) { $('btnStarmapTheme').addEventListener('click', toggleTheme); }
+    if ($('sessNo')) {
+      $('sessNo').addEventListener('click', function () { showPage('starmap'); });
+      $('sessNo').style.cursor = 'pointer';
+    }    doc.addEventListener('pointerdown', armSfx, true);
     doc.addEventListener('keydown', armSfx, true);
     doc.addEventListener('touchstart', armSfx, true);
   }
@@ -298,6 +307,29 @@
       snuff: function () { head.snuff(); }
     });
     bind();
+        if (O.starmap) {
+      O.starmap.mount({
+        canvas: $('smCanvas'),
+        empty: $('smEmpty'),
+        card: $('smCard'),
+        smCno: $('smCno'),
+        smMeta: $('smMeta'),
+        smSub: $('smSub'),
+        cardClose: $('smCardClose'),
+        btnView: $('smBtnView'),
+        btnReplay: $('smBtnReplay'),
+        ovSession: $('ovSession'),
+        sessTitle: $('sessTitle'),
+        sessClose: $('sessClose'),
+        replayBar: $('sessReplayBar'),
+        playBtn: $('sessPlayBtn'),
+        track: $('sessTrack'),
+        fill: $('sessFill'),
+        knob: $('sessKnob'),
+        clk: $('sessClk'),
+        sessHist: $('sessHist')
+      });
+    }
     O.decks.mount({
       sum: $('deckSum'),
       list: $('deckList'),

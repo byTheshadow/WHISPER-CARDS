@@ -1,0 +1,223 @@
+/* 星图与会话历史（M5）
+   视觉参考 F:\参考html\starmap-v3.html 与 session.html
+   基线 Chrome 61：不用 gap / inset / clamp。 */
+
+.starmap-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.sm-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sm-empty {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 20px;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  color: var(--mute);
+  line-height: 1.8;
+  pointer-events: none;
+}
+
+.sm-empty small {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  opacity: 0.75;
+}
+
+.sm-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  text-align: center;
+  pointer-events: none;
+}
+
+.sm-legend {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--mute);
+  padding: 4px 14px;
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+}
+
+.sm-legend .sep {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  background: var(--hair);
+  margin: 0 10px;
+}
+
+/* 底部弹出卡片 */
+.sm-card {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 16px 20px 10px;
+  box-shadow: 0 8px 24px var(--glow2);
+  z-index: 10;
+  animation: ncIn 0.4s ease both;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .sm-card {
+    background: rgba(244, 244, 242, 0.88);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+  }
+  html.dark .sm-card {
+    background: rgba(11, 11, 13, 0.86);
+  }
+}
+
+.sm-card[hidden] {
+  display: none;
+}
+
+.sm-ch {
+  display: flex;
+  align-items: baseline;
+}
+
+.sm-cno {
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.sm-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--mute);
+}
+
+.sm-sub {
+  margin-top: 3px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--ink2);
+}
+
+.sm-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  border-top: 1px solid var(--hair);
+  padding-top: 4px;
+}
+
+.sm-actions .cb {
+  padding: 8px 18px;
+  font-size: 13px;
+}
+
+/* 会话详情与回放全屏覆盖层 */
+.sess-replay-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 14px;
+}
+
+.sess-play-btn {
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  color: var(--ink);
+  font-size: 11.5px;
+  letter-spacing: 0.2em;
+  padding: 6px 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.sess-track {
+  flex: 1;
+  height: 24px;
+  position: relative;
+  margin: 0 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sess-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hair);
+}
+
+.sess-fill {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--ink);
+}
+
+.sess-knob {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 6px var(--glow2);
+}
+
+.sess-clk {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--mute);
+  flex: 0 0 auto;
+  min-width: 44px;
+  text-align: right;
+}
+
+.sess-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 0 30px;
+}
+
+.sess-hist {
+  display: flex;
+  flex-direction: column;
+}

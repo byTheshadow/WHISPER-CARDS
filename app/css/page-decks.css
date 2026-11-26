@@ -341,3 +341,26 @@
 
 /* 特殊卡操作行多了「加礼物」，320 宽下自然折行，别硬挤 */
 .da { flex-wrap: wrap; }
+.ab.del { color: #d9534f; margin-left: auto; }
+html.dark .ab.del { color: #ff6b6b; }
+
+.btn-new-deck {
+  width: 100%;
+  padding: 16px;
+  border: 1px dashed var(--hair);
+  border-radius: 4px;
+  background: none;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  color: var(--mute);
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 24px;
+  transition: all 0.3s;
+}
+
+.btn-new-deck:hover, .btn-new-deck:active {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--glow2);
+}
