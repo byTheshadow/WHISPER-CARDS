@@ -155,6 +155,7 @@
 
   /* 拖拽交互：旋转星盘 */
   function bindInteractions() {
+    if (!refs || !refs.canvas) { return; }
     var cv = refs.canvas;
     var dragging = false;
     var lastX = 0;
@@ -345,25 +346,30 @@
 
   function mount(r) {
     refs = r;
+    if (!refs || !refs.canvas) { return; }
     resize();
     bindInteractions();
     win.addEventListener('resize', resize);
 
-    refs.cardClose.addEventListener('click', function () {
-      refs.smCard.hidden = true;
-      selectedStar = null;
-    });
+    if (refs.cardClose) {
+      refs.cardClose.addEventListener('click', function () {
+        if (refs.smCard) { refs.smCard.hidden = true; }
+        selectedStar = null;
+      });
+    }
 
-    refs.btnView.addEventListener('click', openView);
-    refs.btnReplay.addEventListener('click', openReplay);
+    if (refs.btnView) { refs.btnView.addEventListener('click', openView); }
+    if (refs.btnReplay) { refs.btnReplay.addEventListener('click', openReplay); }
 
-    refs.sessClose.addEventListener('click', function () {
-      replay.running = false;
-      win.clearTimeout(replay.timer);
-      O.ui.closeOv(refs.ovSession);
-    });
+    if (refs.sessClose) {
+      refs.sessClose.addEventListener('click', function () {
+        replay.running = false;
+        win.clearTimeout(replay.timer);
+        if (refs.ovSession) { O.ui.closeOv(refs.ovSession); }
+      });
+    }
 
-    refs.playBtn.addEventListener('click', togglePlay);
+    if (refs.playBtn) { refs.playBtn.addEventListener('click', togglePlay); }
   }
 
   O.starmap = {

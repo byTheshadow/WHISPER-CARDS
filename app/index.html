@@ -87,6 +87,42 @@
       </div>
     </div>
   </section>
+
+  <section class="page" data-page="starmap" id="pageStarmap" tabindex="-1" hidden>
+    <div class="col">
+      <header class="s-bar">
+        <button class="tbtn" id="btnStarmapBack" type="button">返回</button>
+        <span class="s-title">星图 · 历史</span>
+        <span class="sp"></span>
+        <button class="tbtn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
+      </header>
+      <div class="starmap-stage" id="starmapStage">
+        <canvas id="smCanvas" class="sm-canvas"></canvas>
+        <div class="sm-empty" id="smEmpty" hidden>还没有留下历史星尘<br><small>完成一次会话并「送走」后，光点将在这里显影成星</small></div>
+        <div class="sm-foot" id="smFoot">
+          <div class="sm-legend">
+            <span>光点大小 ＝ 消息数</span>
+            <i class="sep"></i>
+            <span>越亮越近</span>
+          </div>
+        </div>
+      </div>
+      <div class="sm-card" id="smCard" hidden>
+        <div class="sm-ch">
+          <span class="sm-cno" id="smCno">No.----</span>
+          <span class="sp"></span>
+          <button class="tbtn" id="smCardClose" type="button">收起</button>
+        </div>
+        <div class="sm-meta" id="smMeta">2026.11.26 · 14:00</div>
+        <div class="sm-sub" id="smSub">共 12 段 · 字卡</div>
+        <div class="sm-actions">
+          <button class="cb" id="smBtnView" type="button">查看全篇</button>
+          <i class="sep"></i>
+          <button class="cb" id="smBtnReplay" type="button">回放重现</button>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div class="ov" id="ovPaste" role="dialog" aria-modal="true" aria-labelledby="pTitle" hidden>
