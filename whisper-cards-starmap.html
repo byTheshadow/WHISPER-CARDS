@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>显影 · 星图</title>
+<style>
+/* =====================================================================
+   显影 · 传讯字卡（WHISPER CARDS）—— 星图（历史记录）
+   设计概念：墨玉星盘 / 留白为光
+   - 浅色：光不是“加上去的白”，而是墨晕中留出的白。每颗星 = 一圈淡墨晕 + 一粒素白光核，
+     因此在冷灰纸面上读作“晶莹的露珠”，而不是墨点灰尘。
+   - 深色：同一套几何，改为叠加发光（lighter），银灰冷光。
+   - 秩序：外缘百刻细刻度、二十八宿分野、十二时辰方位；斜交黄道环；星官连线。
+   - 语义：方位 = 开始的时辰；离圆心越近 = 越新；光核大小 = 消息数；亮度 = 时间远近。
+   兼容基线 Chrome 61：不用 flex gap / inset / clamp / aspect-ratio / 可选链。
+   ===================================================================== */
+
+/* ---------- 1. 设计令牌 ---------- */
+:root {
+  --bg: #f4f4f2;
+  --ink: #121214;
+  --ink2: rgba(18, 18, 20, 0.74);
+  --mute: rgba(18, 18, 20, 0.46);
+  --hair: rgba(18, 18, 20, 0.13);
+  --glow: rgba(18, 18, 20, 0.16);
+  --glow2: rgba(18, 18, 20, 0.07);
+  --glass: rgba(246, 246, 244, 0.7);
+  --glass-edge: rgba(255, 255, 255, 0.7);
+  --core: #ffffff;
+  --veil: rgba(18, 18, 20, 0.06);
+  --grain-o: 0.05;
+  --sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --nav-h: 0px;
+}
+html.dark {
+  --bg: #0b0b0d;
+  --ink: #f1f1f3;
+  --ink2: rgba(241, 241, 243, 0.76);
+  --mute: rgba(241, 241, 243, 0.44);
+  --hair: rgba(241, 241, 243, 0.13);
+  --glow: rgba(205, 218, 245, 0.42);
+  --glow2: rgba(205, 218, 245, 0.12);
+  --glass: rgba(18, 18, 22, 0.62);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --core: #ffffff;
+  --veil: rgba(0, 0, 0, 0.55);
+  --grain-o: 0.07;
+}
+
+/* ---------- 2. 基础 ---------- */
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.9s, color 0.9s;
+}
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform 0.14s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.25s, color 0.25s;
+}
+button:active:not(:disabled) { transform: scale(0.94); opacity: 0.7; }
+button:focus { outline: none; }
+button:focus-visible { outline: 1px solid var(--mute); outline-offset: 4px; border-radius: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- 3. 天幕层：画布 + 纸纹 + 暗角 ---------- */
+#smCanvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; display: block;
+  touch-action: none; cursor: grab;
+  transition: opacity 0.35s;
+}
+#smCanvas:focus { outline: none; }
+#veil {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0, 0, 0, 0) 55%, var(--veil) 100%);
+  transition: background 0.9s;
+}
+#grain {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;
+  opacity: var(--grain-o);
+}
+
+/* ---------- 4. 页面骨架（UI 浮在星空之上，不遮挡手势） ---------- */
+#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none; }
+.page { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; }
+.col { position: relative; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; }
+
+/* 顶栏：完全通透，无底色无边线 */
+.sm-top {
+  display: flex; align-items: center;
+  padding: 14px 22px 0;
+  padding-top: calc(var(--nav-h) + 14px + env(safe-area-inset-top, 0px));
+  pointer-events: auto;
+}
+.sm-back { padding: 10px 0; font-size: 12.5px; letter-spacing: 0.24em; color: var(--ink2); }
+.sm-back:hover { color: var(--ink); }
+.sm-top .sep { display: inline-block; width: 1px; height: 10px; background: var(--hair); margin: 0 12px; }
+.sm-ttl { font-size: 13px; font-weight: 400; letter-spacing: 0.4em; margin-right: -0.4em; }
+.sm-cnt { font-size: 11px; letter-spacing: 0.2em; color: var(--mute); font-variant-numeric: tabular-nums; }
+.sm-top .sp { flex: 1; }
+
+/* 月相切换：沿用原有的半月图标，切换时缓缓翻转 */
+.theme-btn { width: 36px; height: 36px; margin-right: -12px; display: flex; align-items: center; justify-content: center; }
+.moon {
+  display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+  border: 1px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, rgba(0, 0, 0, 0) 50%);
+  transition: transform 0.9s cubic-bezier(0.5, 0, 0.2, 1);
+}
+html.dark .moon { transform: rotate(180deg); }
+
+/* 画布测量区（只占位，不拦截手势） */
+.starmap-stage { flex: 1; position: relative; min-height: 0; }
+
+/* 空状态：文字落在“未显影的星位”下方，位置由脚本按星盘中心计算 */
+.sm-empty {
+  position: absolute; top: 58%; left: 24px; right: 24px;
+  text-align: center; pointer-events: none;
+  animation: emptyIn 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sm-empty .t { display: block; font-size: 13.5px; letter-spacing: 0.42em; padding-left: 0.42em; color: var(--ink2); }
+.sm-empty small { display: block; margin-top: 14px; font-size: 11px; line-height: 1.9; letter-spacing: 0.16em; color: var(--mute); }
+.sm-go {
+  margin-top: 30px; padding: 10px 0 10px 0.46em; pointer-events: auto;
+  font-size: 12.5px; font-weight: 400; letter-spacing: 0.46em; color: var(--ink);
+  border-bottom: 1px solid var(--hair);
+}
+@keyframes emptyIn { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: none; } }
+
+/* 底部图例 */
+.foot {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+  text-align: center; pointer-events: none;
+  transition: opacity 0.6s, transform 0.6s;
+}
+.foot.off { opacity: 0; transform: translateY(8px); }
+.foot .hint { display: block; margin-bottom: 12px; font-size: 10.5px; letter-spacing: 0.34em; color: var(--mute); transition: opacity 1.2s; }
+.foot .hint.gone { opacity: 0; }
+.legend { display: flex; justify-content: center; align-items: center; font-size: 10px; letter-spacing: 0.24em; color: var(--mute); }
+.legend .g { display: flex; align-items: center; }
+.legend .sep { display: inline-block; width: 1px; height: 9px; background: var(--hair); margin: 0 14px; }
+/* 图例里的星：与画布同一语言——素白光核 + 一圈墨晕 */
+.legend .d {
+  display: inline-block; border-radius: 50%; margin-right: 7px; background: var(--core);
+  box-shadow: 0 0 0 0.6px var(--mute), 0 0 6px var(--glow);
+}
+html.dark .legend .d { box-shadow: 0 0 5px var(--glow), 0 0 10px var(--glow2); }
+
+/* ---------- 5. 会话卡片（磨砂滑出） ---------- */
+.card {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 22px 30px 4px;
+  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: 1px solid var(--hair);
+  box-shadow: 0 -10px 30px var(--glow2);
+  pointer-events: auto;
+  transform: translateY(105%);
+  transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1), background-color 0.9s;
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .card, .ov {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}
+.card.on { transform: translateY(0); }
+.ch { display: flex; align-items: baseline; }
+.cn { font-size: 11px; letter-spacing: 0.3em; color: var(--mute); margin-right: 6px; }
+.cno { font-size: 26px; font-weight: 300; letter-spacing: 0.16em; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px var(--glow2); }
+.ch .sp { flex: 1; }
+.ab { font-size: 12px; letter-spacing: 0.24em; padding: 8px 0 8px 14px; color: var(--mute); }
+.ab:hover { color: var(--ink); }
+.ct { margin-top: 8px; font-size: 12px; letter-spacing: 0.18em; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.ct .sc { margin-left: 12px; color: var(--mute); letter-spacing: 0.24em; }
+.cm { display: flex; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 11px; letter-spacing: 0.2em; color: var(--mute); line-height: 1.8; }
+.cm .sep { display: inline-block; width: 1px; height: 9px; background: var(--hair); margin: 0 12px; }
+.ca { display: flex; align-items: center; justify-content: center; margin-top: 14px; border-top: 1px solid var(--hair); }
+.ca .sep { display: inline-block; width: 1px; height: 14px; background: var(--hair); }
+.cb { flex: 1; font-size: 13.5px; font-weight: 400; letter-spacing: 0.36em; padding: 14px 0 12px 0.36em; }
+
+/* ---------- 6. 全篇 / 回放覆盖层 ---------- */
+.ov {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; justify-content: center;
+  background: var(--bg);
+  opacity: 0; transition: opacity 0.45s;
+}
+.ov.on { opacity: 1; }
+.ov-sheet {
+  width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column;
+  padding: 0 26px;
+  padding-top: calc(var(--nav-h) + 14px + env(safe-area-inset-top, 0px));
+}
+.ov-bar { display: flex; align-items: center; padding-bottom: 10px; }
+.ov-bar .sp { flex: 1; }
+.ov-title { font-size: 11.5px; letter-spacing: 0.3em; color: var(--mute); }
+.sess-replay-bar { display: flex; align-items: center; padding: 6px 0 14px; border-bottom: 1px solid var(--hair); }
+.sess-play-btn { font-size: 12px; letter-spacing: 0.3em; padding: 8px 0.3em 8px 0; min-width: 52px; text-align: left; }
+.sess-track { flex: 1; height: 28px; position: relative; margin: 0 14px; cursor: pointer; }
+.sess-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--hair); }
+.sess-fill { position: absolute; left: 0; top: 50%; height: 1px; width: 0; background: var(--ink); transition: width 0.4s; }
+.sess-knob {
+  position: absolute; top: 50%; left: 0; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+  background: var(--core); box-shadow: 0 0 0 0.6px var(--ink), 0 0 8px var(--glow); transition: left 0.4s;
+}
+.sess-clk { font-size: 10.5px; letter-spacing: 0.14em; color: var(--mute); min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+.sess-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 0 40px; }
+.ev { text-align: center; padding: 16px 0; animation: evIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.ev-q { font-size: 19px; letter-spacing: 0.06em; line-height: 1.75; }
+.ev-row { display: flex; justify-content: center; flex-wrap: wrap; }
+.tile {
+  min-width: 42px; height: 56px; margin: 4px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 5px; box-shadow: inset 0 0 0 1px var(--hair), 0 4px 16px var(--glow2);
+  font-size: 19px; font-weight: 300;
+}
+.tile.tf { min-width: 74px; height: 76px; font-size: 14px; letter-spacing: 0.2em; }
+.tile .tn { font-size: 9.5px; letter-spacing: 0.2em; color: var(--mute); margin-bottom: 4px; }
+.tile .kw { font-family: var(--sans); font-size: 10px; letter-spacing: 0.2em; color: var(--mute); margin-top: 4px; }
+.ev-tm { display: block; margin-top: 8px; font-size: 10px; letter-spacing: 0.14em; color: var(--mute); font-variant-numeric: tabular-nums; }
+@keyframes evIn { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .ov, .foot, .ev, .moon::after { transition: none; animation: none; }
+}
+/* 仅演示用：有记录 / 空状态 切换，接入时连同 HTML 一起删除 */
+.demo-bar {
+  position: fixed; z-index: 1; left: 0; right: 0; bottom: 0; text-align: center;
+  padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  font-size: 10px; letter-spacing: 0.2em; color: var(--mute);
+}
+.demo-bar button { padding: 4px 6px; font-size: 10px; letter-spacing: 0.2em; color: var(--mute); }
+.demo-bar button.on { color: var(--ink); }
+</style>
+</head>
+<body>
+<canvas id="smCanvas" tabindex="0" aria-label="星图：拖动旋转星盘，左右方向键在会话之间切换"></canvas>
+<div id="grain"></div>
+<div id="veil"></div>
+
+<div id="app">
+  <section class="page" data-page="starmap" id="pageStarmap">
+    <div class="col">
+      <header class="sm-top">
+        <button class="sm-back" id="btnStarmapBack" type="button" aria-label="返回对话">‹ 返回</button>
+        <i class="sep"></i>
+        <span class="sm-ttl">星图</span>
+        <i class="sep"></i>
+        <span class="sm-cnt" id="smCnt">共 0 场会话</span>
+        <span class="sp"></span>
+        <button class="theme-btn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
+      </header>
+
+      <div class="starmap-stage" id="starmapStage">
+        <div class="sm-empty" id="smEmpty" hidden>
+          <span class="t">还没有星辰显影</span>
+          <small>完成一次会话并「送走」后<br>它会在这里亮起，成为第一颗星</small>
+          <button class="sm-go" id="smEmptyGo" type="button">开始一场会话</button>
+        </div>
+        <div class="foot" id="smFoot">
+          <span class="hint" id="smHint">拖动旋转　上下俯仰　轻点星辰</span>
+          <div class="legend">
+            <span class="g"><i class="d" style="width:3px;height:3px"></i><i class="d" style="width:7px;height:7px"></i>消息数</span>
+            <i class="sep"></i>
+            <span class="g"><i class="d" style="width:5px;height:5px;opacity:.35"></i><i class="d" style="width:5px;height:5px"></i>越亮越近</span>
+            <i class="sep"></i>
+            <span class="g">方位即时辰</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="smCard" role="dialog" aria-labelledby="smCno" hidden>
+        <div class="ch">
+          <span class="cn">No.</span>
+          <span class="cno" id="smCno">----</span>
+          <span class="sp"></span>
+          <button class="ab" id="smCardClose" type="button">收起</button>
+        </div>
+        <div class="ct" id="smMeta"></div>
+        <div class="cm"><span id="smMsg"></span><i class="sep"></i><span id="smDur"></span><i class="sep"></i><span id="smDeck"></span></div>
+        <div class="ca">
+          <button class="cb" id="smBtnReplay" type="button">回放</button>
+          <i class="sep"></i>
+          <button class="cb" id="smBtnView" type="button">展开全篇</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 仅演示用 -->
+<div class="demo-bar" id="demoBar">演示<button type="button" data-demo="full" class="on">有记录</button>|<button type="button" data-demo="empty">空状态</button></div>
+
+<!-- 全篇 / 回放覆盖层 -->
+<div class="ov" id="ovSession" role="dialog" aria-labelledby="sessTitle" hidden>
+  <div class="ov-sheet">
+    <div class="ov-bar">
+      <button class="sm-back" id="sessClose" type="button">‹ 收起</button>
+      <span class="sp"></span>
+      <span class="ov-title" id="sessTitle"></span>
+    </div>
+    <div class="sess-replay-bar" id="replayBar" hidden>
+      <button class="sess-play-btn" id="playBtn" type="button">暂停</button>
+      <div class="sess-track" id="sessTrack"><i class="sess-fill" id="sessFill"></i><i class="sess-knob" id="sessKnob"></i></div>
+      <span class="sess-clk" id="sessClk">0/0</span>
+    </div>
+    <div class="sess-body"><div class="sess-hist" id="sessHist"></div></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   A. 演示外壳：模拟数据与 UI 钩子
+   接入正式项目时，用真实的 Oracle.db / Oracle.ui 替换本段即可；
+   星图模块（B 段）只依赖 Oracle.db.loadSessions / loadEvents 与 Oracle.ui.openOv / closeOv。
+   在地址后加 #empty 可预览空状态。
+   ===================================================================== */
+(function (win) {
+  'use strict';
+  var O = win.Oracle = win.Oracle || {};
+  var DAY = 86400000;
+
+  function rngOf(seed) {
+    var a = seed | 0;
+    return function () {
+      a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  /* 23 场会话，分布在约 70 天里，多在夜间 */
+  var sessions = [];
+  var r = rngOf(20261126);
+  var deckSets = [['字卡'], ['字卡', '塔罗'], ['字卡', '特殊卡'], ['字卡', '特殊卡', '塔罗'], ['塔罗']];
+  var now = Date.now();
+  var day = 70;
+  var i;
+  for (i = 0; i < 23; i++) {
+    day -= 1 + Math.floor(r() * 5);
+    if (day < 0) { day = 0; }
+    var base = new Date(now - day * DAY);
+    var hourPick = r() < 0.7 ? 19 + r() * 9 : r() * 24;
+    base.setHours(Math.floor(hourPick) % 24, Math.floor(r() * 60), 0, 0);
+    var start = Math.min(base.getTime(), now - 3600000 * (23 - i));
+    var msg = 4 + Math.floor(Math.pow(r(), 1.4) * 34);
+    sessions.push({
+      no: String(8781 + i),
+      startedAt: start,
+      endedAt: start + (6 + msg * (0.6 + r())) * 60000,
+      msgCount: msg,
+      decks: deckSets[Math.floor(r() * deckSets.length)]
+    });
+  }
+  var demoEmpty = win.location.hash === '#empty';
+
+  var Q = ['你还在吗', '今晚的风是你吗', '我该不该离开这座城', '那封信你收到了吗', '你想对我说什么', '我们还会再见吗', '这条路走得对吗', '要等多久', '你在看着我吗', '我梦见的是你吗'];
+  var WORDS = ['是', '否', '等', '光', '门', '水', '归', '静', '远', '未', '安', '风', '近', '梦', '晴', '桥'];
+  var TAROT = [
+    { name: '星星', num: 'XVII', upright: '希望', reversed: '迷失' },
+    { name: '月亮', num: 'XVIII', upright: '直觉', reversed: '释怀' },
+    { name: '隐者', num: 'IX', upright: '内省', reversed: '孤立' },
+    { name: '太阳', num: 'XIX', upright: '明朗', reversed: '延迟' },
+    { name: '命运之轮', num: 'X', upright: '转机', reversed: '停滞' }
+  ];
+
+  function mockEvents(no) {
+    var s = null, k;
+    for (k = 0; k < sessions.length; k++) { if (sessions[k].no === no) { s = sessions[k]; } }
+    if (!s) { return []; }
+    var rr = rngOf(+no * 97);
+    var list = [];
+    var span = (s.endedAt - s.startedAt) / s.msgCount;
+    for (k = 0; k < s.msgCount; k++) {
+      var at = s.startedAt + k * span;
+      if (k % 2 === 0) {
+        list.push({ who: 'me', text: Q[Math.floor(rr() * Q.length)], at: at });
+      } else {
+        var cards = [];
+        var useTarot = s.decks.indexOf('塔罗') >= 0 && rr() < 0.3;
+        if (useTarot) {
+          var t = TAROT[Math.floor(rr() * TAROT.length)];
+          cards.push({ kind: 'tarot', name: t.name, num: t.num, upright: t.upright, reversed: t.reversed, side: rr() < 0.3 ? 'reversed' : 'upright' });
+        } else {
+          var n = 1 + Math.floor(rr() * 3), j;
+          for (j = 0; j < n; j++) { cards.push({ kind: 'word', text: WORDS[Math.floor(rr() * WORDS.length)] }); }
+        }
+        list.push({ who: 'spirit', cards: cards, at: at });
+      }
+    }
+    return list;
+  }
+
+  O.db = {
+    loadSessions: function () { return Promise.resolve(demoEmpty ? [] : sessions.slice()); },
+    loadEvents: function (no) { return Promise.resolve(mockEvents(no)); }
+  };
+
+  O.ui = {
+    openOv: function (ov, focusEl) {
+      ov.hidden = false;
+      void ov.offsetHeight;
+      ov.classList.add('on');
+      if (focusEl) { focusEl.focus(); }
+    },
+    closeOv: function (ov) {
+      ov.classList.remove('on');
+      win.setTimeout(function () { if (!ov.classList.contains('on')) { ov.hidden = true; } }, 460);
+    }
+  };
+
+  /* 初始主题：跟随系统 */
+  if (win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.classList.add('dark');
+  }
+  document.getElementById('btnStarmapTheme').addEventListener('click', function () {
+    document.documentElement.classList.toggle('dark');
+  });
+  function goBack() { if (win.history.length > 1) { win.history.back(); } }
+  document.getElementById('btnStarmapBack').addEventListener('click', goBack);
+  document.getElementById('smEmptyGo').addEventListener('click', goBack);
+
+  /* 仅演示用：切换有记录 / 空状态 */
+  var bar = document.getElementById('demoBar');
+  var btns = bar.querySelectorAll('button');
+  function markDemo() {
+    var k;
+    for (k = 0; k < btns.length; k++) {
+      btns[k].classList.toggle('on', (btns[k].getAttribute('data-demo') === 'empty') === demoEmpty);
+    }
+  }
+  markDemo();
+  bar.addEventListener('click', function (e) {
+    var m = e.target.getAttribute && e.target.getAttribute('data-demo');
+    if (!m) { return; }
+    demoEmpty = m === 'empty';
+    markDemo();
+    if (O.starmap) { O.starmap.open(); }
+  });
+
+  /* 纸纹：运行时生成的细噪点，不依赖外部图片 */
+  var g = document.createElement('canvas');
+  g.width = g.height = 140;
+  var gc = g.getContext('2d');
+  var img = gc.createImageData(140, 140);
+  var p;
+  for (p = 0; p < img.data.length; p += 4) {
+    var v = Math.random() * 255;
+    img.data[p] = img.data[p + 1] = img.data[p + 2] = v;
+    img.data[p + 3] = 255;
+  }
+  gc.putImageData(img, 0, 0);
+  document.getElementById('grain').style.backgroundImage = 'url(' + g.toDataURL() + ')';
+})(window);
+
+/* =====================================================================
+   B. 星图模块  Oracle.starmap  { mount, open, close }
+   ---------------------------------------------------------------------
+   B1 工具函数         B5 绘制：星云与星盘刻度
+   B2 状态与主题       B6 绘制：星辰（背景星 / 会话星 / 星轨）
+   B3 布局与模型       B7 动效：涟漪、聚光微粒、帧循环
+   B4 三维投影与相机    B8 交互：拖拽、俯仰回弹、点选、键盘
+                       B9 卡片与全篇 / 回放
+   ===================================================================== */
+(function (win) {
+  'use strict';
+  var O = win.Oracle = win.Oracle || {};
+  var doc = win.document;
+  var TAU = Math.PI * 2;
+  var SHICHEN = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  var reduceMotion = !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ---------- B1 工具函数 ---------- */
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function nowMs() { return win.performance && win.performance.now ? win.performance.now() : Date.now(); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function el(tag, cls, text) {
+    var n = doc.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text != null) { n.textContent = text; }
+    return n;
+  }
+  function mulberry(a) {
+    return function () {
+      a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function formatDate(ts) {
+    if (!ts) { return ''; }
+    var d = new Date(ts);
+    return d.getFullYear() + '.' + pad2(d.getMonth() + 1) + '.' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function shichenOf(ts) {
+    var h = new Date(ts).getHours();
+    return SHICHEN[Math.floor(((h + 1) % 24) / 2)] + '时';
+  }
+  /* 一天 24 小时映射到星盘一周，子时（0 点）在正北 */
+  function hourAngle(ts) {
+    var d = new Date(ts);
+    return (d.getHours() + d.getMinutes() / 60) / 24 * TAU - Math.PI / 2;
+  }
+
+  /* ---------- B2 状态与主题 ---------- */
+  var refs = null;
+  var ctx = null;
+  var sessions = [];
+  var curSess = null;
+  var events = [];
+  var running = false;
+  var rafId = 0;
+  var lastTs = 0;
+  var clock = 0;
+
+  var W = 0, H = 0, DPR = 1, CX = 0, CY = 0, R = 160, DIST = 500;
+
+  var T_REST = 0.88, T_MIN = 0.34, T_MAX = 1.36;   /* 俯仰角：0 为正视，越大越倾斜 */
+  var AUTO_SPIN = 0.000035;                        /* 静置时的缓慢自转（弧度 / 毫秒） */
+  var view = { rot: 0.4, vel: 0, tilt: T_REST, tiltV: 0, dragging: false };
+  var cam = { z: 1, fx: 0, fy: 0, ox: 0, oy: 0, follow: false };
+
+  var ST = [];      /* 会话星（按时间从旧到新） */
+  var FIELD = [];   /* 背景星：盘面星 + 天球远星 + 星官 */
+  var LINKS = [];   /* 星官连线 [i, j] → FIELD 下标 */
+  var NEB = [];     /* 墨晕星云 */
+  var RINGS = [];   /* 预计算的环形几何 */
+  var RIPS = [];    /* 涟漪 */
+  var MOTES = [];   /* 选中时向星点聚集的微光 */
+
+  var sel = -1, hover = -1;
+  var emptyMode = false;    /* 无会话：星盘上移，文字落在盘下 */
+  var pointer = { x: -9999, y: -9999, inside: false, touch: false, acc: 0, lastRip: 0 };
+  var moteTimer = 0;
+
+  var TH = null;            /* 当前主题的颜色与精灵图 */
+  var themeObs = null;
+
+  /* 精灵图：预渲染的光晕、光核与星芒，帧内只做 drawImage */
+  function makeGlow(rgb, soft) {
+    var c = doc.createElement('canvas'); c.width = c.height = 64;
+    var g = c.getContext('2d');
+    var gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(' + rgb + ',1)');
+    gr.addColorStop(soft ? 0.18 : 0.3, 'rgba(' + rgb + ',' + (soft ? 0.38 : 0.7) + ')');
+    gr.addColorStop(soft ? 0.5 : 0.62, 'rgba(' + rgb + ',' + (soft ? 0.08 : 0.16) + ')');
+    gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    return c;
+  }
+  function makeSpike(rgb) {
+    var S = 128, c = doc.createElement('canvas'); c.width = c.height = S;
+    var g = c.getContext('2d'), m = S / 2;
+    function ray(len, w, ang) {
+      /* 渐变在平移后的坐标系里创建，中心与射线中心重合 */
+      g.save(); g.translate(m, m); g.rotate(ang);
+      var gr = g.createRadialGradient(0, 0, 0, 0, 0, len);
+      gr.addColorStop(0, 'rgba(' + rgb + ',1)');
+      gr.addColorStop(0.22, 'rgba(' + rgb + ',0.55)');
+      gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(-len, 0); g.lineTo(0, -w); g.lineTo(len, 0); g.lineTo(0, w);
+      g.closePath(); g.fill(); g.restore();
+    }
+    ray(m, 2.4, 0); ray(m, 2.4, Math.PI / 2);
+    ray(m * 0.36, 1.5, Math.PI / 4); ray(m * 0.36, 1.5, -Math.PI / 4);
+    return c;
+  }
+
+  function buildTheme() {
+    var dark = doc.documentElement.classList.contains('dark');
+    var halo = dark ? '168,188,228' : '22,24,32';
+    var spk = dark ? '226,233,250' : '22,24,32';
+    /* 选中不换色，只“聚光”：同一种墨 / 银灰，更浓更亮 */
+    var warm = dark ? '236,241,255' : '18,18,20';
+    TH = {
+      dark: dark,
+      blend: dark ? 'lighter' : 'source-over',
+      line: dark ? '220,228,248' : '18,18,20',
+      warmRgb: warm,
+      haloA: dark ? 0.34 : 0.26,
+      fieldHaloA: dark ? 0.34 : 0.62,
+      fieldHaloK: dark ? 7 : 4.6,
+      spikeA: dark ? 0.62 : 0.55,
+      coreA: 1,
+      halo: makeGlow(halo, true),
+      haloTight: makeGlow(halo, false),
+      haloWarm: makeGlow(warm, true),
+      core: makeGlow('255,255,255', false),
+      coreWarm: makeGlow('255,255,255', false),
+      spike: makeSpike(spk),
+      spikeWarm: makeSpike(warm)
+    };
+  }
+
+  /* ---------- B3 布局与模型 ---------- */
+  function resize() {
+    if (!refs) { return; }
+    W = win.innerWidth; H = win.innerHeight;
+    DPR = Math.min(win.devicePixelRatio || 1, 2);
+    refs.canvas.width = Math.round(W * DPR);
+    refs.canvas.height = Math.round(H * DPR);
+    var st = refs.stage.getBoundingClientRect();
+    var colW = Math.min(W, 760);
+    CX = W / 2;
+    CY = st.top + st.height * (emptyMode ? 0.38 : 0.45);
+    /* 竖屏空间高，星盘更正视一些，充分利用纵向 */
+    var portrait = H / W > 1.3;
+    var prevRest = T_REST;
+    T_REST = portrait ? 0.64 : 0.88;
+    if (view.tilt === prevRest) { view.tilt = T_REST; }
+    R = Math.max(110, Math.min(colW / 2 - (portrait ? 38 : 26), (st.height * 0.5 - 78) / 1.02, 330));
+    if (emptyMode) { R = Math.max(110, R * 0.82); }   /* 空盘稍小，给文字留出呼吸 */
+    DIST = R * 3.4;
+    /* 空状态文字放在星盘近侧边缘（含时辰字）之下 */
+    if (refs.empty) {
+      var lr = 1.13 * R;
+      var nearY = lr * Math.cos(T_REST) * DIST / (DIST - lr * Math.sin(T_REST));
+      refs.empty.style.top = Math.round(Math.min(CY - st.top + nearY + 30, st.height - 190)) + 'px';
+    }
+  }
+
+  /* 以 (r, a, h) 描述盘面坐标：r 为半径占比，a 为方位角，h 为离盘面的高度占比 */
+  function buildModel() {
+    var rng = mulberry(4402);
+    var i, j;
+
+    /* 会话星：方位 = 时辰，半径 = 新旧（最新靠近圆心） */
+    sessions.sort(function (a, b) { return a.startedAt - b.startedAt; });
+    var N = sessions.length;
+    ST = [];
+    for (i = 0; i < N; i++) {
+      var s = sessions[i];
+      var k = N > 1 ? (N - 1 - i) / (N - 1) : 0;
+      var jr = mulberry((+s.no || i) * 31 + 7);
+      ST.push({
+        sess: s,
+        r: N > 1 ? 0.2 + 0.72 * Math.pow(k, 0.85) : 0.42,
+        a: hourAngle(s.startedAt) + (jr() - 0.5) * 0.08,
+        h: (jr() - 0.5) * 0.03,
+        size: clamp(1.7 + Math.sqrt(s.msgCount || 1) * 0.6, 2.2, 5.6),
+        bright: N > 1 ? 1 - 0.58 * k : 1,
+        spike: (s.msgCount || 0) >= 14,
+        ph: jr() * TAU,
+        heat: 0, hov: 0, px: 0, py: 0, pz: 0, pf: 1
+      });
+    }
+
+    /* 背景星：数量随屏幕面积伸缩 */
+    FIELD = []; LINKS = [];
+    var area = W * H;
+    var nDisc = Math.round(clamp(area / 3400, 90, 230));
+    var nSphere = Math.round(clamp(area / 7000, 50, 140));
+    function star(r, a, h, mag, kind) {
+      FIELD.push({
+        r: r, a: a, h: h, mag: mag, kind: kind,
+        size: 0.6 + mag * 1.6,
+        spk: mag > 0.62,
+        tw: 0.0006 + rng() * 0.0022, ph: rng() * TAU, res: 0
+      });
+    }
+    for (i = 0; i < nDisc; i++) {
+      star(Math.sqrt(rng()) * 1.02, rng() * TAU, (rng() - 0.5) * 0.09, Math.pow(rng(), 2.4), 0);
+    }
+    /* 天球远星：分布在半径 1.7 的球壳上，旋转时产生视差纵深 */
+    for (i = 0; i < nSphere; i++) {
+      var u = rng() * 2 - 1, th = rng() * TAU, rad = 1.55 + rng() * 0.4;
+      star(Math.sqrt(1 - u * u) * rad, th, u * rad, Math.pow(rng(), 2) * 0.75, 1);
+    }
+    /* 星官：七组小星团，以最近邻串成折线，仿古星图 */
+    for (i = 0; i < 7; i++) {
+      var cr = 0.3 + rng() * 0.62, ca = rng() * TAU, n = 4 + Math.floor(rng() * 3);
+      var base = FIELD.length;
+      var x0 = Math.cos(ca) * cr, y0 = Math.sin(ca) * cr;
+      for (j = 0; j < n; j++) {
+        var x = x0 + (rng() - 0.5) * 0.22, y = y0 + (rng() - 0.5) * 0.22;
+        star(Math.sqrt(x * x + y * y), Math.atan2(y, x), (rng() - 0.5) * 0.04, 0.45 + rng() * 0.45, 2);
+      }
+      /* 贪心最近邻连线 */
+      var used = [base], cur = base;
+      while (used.length < n) {
+        var best = -1, bd = 9;
+        for (j = base; j < base + n; j++) {
+          if (used.indexOf(j) >= 0) { continue; }
+          var d = polarDist(FIELD[cur], FIELD[j]);
+          if (d < bd) { bd = d; best = j; }
+        }
+        LINKS.push([cur, best]); used.push(best); cur = best;
+      }
+    }
+
+    /* 墨晕星云：几团缓慢漂移的柔光 */
+    NEB = [];
+    for (i = 0; i < 6; i++) {
+      NEB.push({ r: 0.25 + rng() * 0.6, a: rng() * TAU, rad: 0.35 + rng() * 0.35, a0: 0.6 + rng() * 0.5, drift: (rng() - 0.5) * 0.00003 });
+    }
+
+    /* 环：同心星轨 + 斜交黄道 */
+    RINGS = [];
+    var rr = [0.25, 0.5, 0.75], q;
+    for (q = 0; q < rr.length; q++) { RINGS.push({ pts: circlePts(rr[q], 0, 0), alpha: 0.05, dash: q === 1 }); }
+    RINGS.push({ pts: circlePts(1, 0, 0), alpha: 0.16 });
+    RINGS.push({ pts: circlePts(0.86, 0.41, 0.7), alpha: 0.07, ecl: true });
+  }
+
+  function polarDist(p, q) {
+    var dx = Math.cos(p.a) * p.r - Math.cos(q.a) * q.r;
+    var dy = Math.sin(p.a) * p.r - Math.sin(q.a) * q.r;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /* 圆周点；inc 为倾角，用于黄道环 */
+  function circlePts(r, inc, rotA) {
+    var pts = [], n = 120, i;
+    for (i = 0; i <= n; i++) {
+      var t = i / n * TAU;
+      var x = Math.cos(t) * r, y = Math.sin(t) * r * Math.cos(inc), h = Math.sin(t) * r * Math.sin(inc);
+      pts.push({ r: Math.sqrt(x * x + y * y), a: Math.atan2(y, x) + rotA, h: h });
+    }
+    return pts;
+  }
+
+  /* ---------- B4 三维投影与相机 ---------- */
+  var P = { x: 0, y: 0, z: 0, f: 1 };
+  /* 盘面坐标 → 屏幕坐标。先绕法线自转，再绕水平轴俯仰，最后透视与相机缩放 */
+  function project(r, a, h, out) {
+    var ang = a + view.rot;
+    var x = Math.cos(ang) * r * R, y = Math.sin(ang) * r * R, z = h * R;
+    var ct = Math.cos(view.tilt), st = Math.sin(view.tilt);
+    var y1 = y * ct - z * st;
+    var z1 = y * st + z * ct;
+    var f = DIST / (DIST - z1);
+    var sx = x * f, sy = y1 * f;
+    out.x = CX + (sx - cam.fx) * cam.z + cam.ox;
+    out.y = CY + (sy - cam.fy) * cam.z + cam.oy;
+    out.z = z1 / R;
+    out.f = f * cam.z;
+    out.rx = sx; out.ry = sy;
+    return out;
+  }
+
+  function updateCamera(dt) {
+    var e = 1 - Math.exp(-dt / 320);
+    var tz = 1, tfx = 0, tfy = 0, tox = 0, toy = 0;
+    if (sel >= 0 && cam.follow) {
+      var s = ST[sel];
+      tz = W < 600 ? 1.08 : 1.16;
+      tfx = s.rx; tfy = s.ry;
+      /* 把选中星移到卡片上方的视觉中心 */
+      var cardTop = refs.card.getBoundingClientRect().top || H * 0.7;
+      toy = clamp((cardTop - 40) * 0.5 + 30, H * 0.22, H * 0.5) - CY;
+      tox = s.rx * (W < 600 ? 0.6 : 0.25);
+    }
+    cam.z += (tz - cam.z) * e;
+    cam.fx += (tfx - cam.fx) * e;
+    cam.fy += (tfy - cam.fy) * e;
+    cam.ox += (tox - cam.ox) * e;
+    cam.oy += (toy - cam.oy) * e;
+  }
+
+  /* ---------- B5 绘制：星云与星盘刻度 ---------- */
+  function rgba(rgb, a) { return 'rgba(' + rgb + ',' + (a < 0 ? 0 : a) + ')'; }
+
+  /* 透视下圆盘的屏幕椭圆（取远、近、右三点） */
+  var EA = {}, EB = {}, EC = {};
+  function diskEllipse(r) {
+    project(r, -Math.PI / 2 - view.rot, 0, EA);
+    project(r, Math.PI / 2 - view.rot, 0, EB);
+    project(r, -view.rot, 0, EC);
+    var x = (EA.x + EB.x) / 2, y = (EA.y + EB.y) / 2;
+    return { x: x, y: y, rx: Math.abs(EC.x - x), ry: Math.abs(EB.y - EA.y) / 2 };
+  }
+
+  function drawSky() {
+    var squash = Math.max(0.28, Math.cos(view.tilt));
+    var E = diskEllipse(1);
+    var rad = E.rx * 1.06;
+
+    /* 盘心微亮、盘缘墨晕：墨玉质感 */
+    ctx.save();
+    ctx.translate(E.x, E.y); ctx.scale(1, E.ry / E.rx);
+    var g = ctx.createRadialGradient(0, 0, 0, 0, 0, rad);
+    if (TH.dark) {
+      g.addColorStop(0, 'rgba(200,212,240,0.07)');
+      g.addColorStop(0.5, 'rgba(160,178,220,0.025)');
+      g.addColorStop(1, 'rgba(160,178,220,0)');
+    } else {
+      g.addColorStop(0, 'rgba(255,255,255,0.6)');
+      g.addColorStop(0.4, 'rgba(255,255,255,0.14)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.fill();
+    ctx.restore();
+
+    /* 漂移星云 */
+    ctx.globalCompositeOperation = TH.blend;
+    var i;
+    for (i = 0; i < NEB.length; i++) {
+      var n = NEB[i];
+      if (!reduceMotion) { n.a += n.drift * 16; }
+      project(n.r, n.a, 0, P);
+      var nr = n.rad * R * P.f;
+      ctx.save();
+      ctx.translate(P.x, P.y); ctx.scale(1, squash);
+      var ng = ctx.createRadialGradient(0, 0, 0, 0, 0, nr);
+      var c = TH.dark ? '140,155,190' : '24,26,32';
+      var a0 = (TH.dark ? 0.06 : 0.035) * n.a0;
+      ng.addColorStop(0, rgba(c, a0));
+      ng.addColorStop(0.5, rgba(c, a0 * 0.45));
+      ng.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = ng;
+      ctx.fillRect(-nr, -nr, nr * 2, nr * 2);
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function strokePts(pts, alpha, width, dash) {
+    var i;
+    ctx.beginPath();
+    for (i = 0; i < pts.length; i++) {
+      project(pts[i].r, pts[i].a, pts[i].h, P);
+      if (i === 0) { ctx.moveTo(P.x, P.y); } else { ctx.lineTo(P.x, P.y); }
+    }
+    ctx.strokeStyle = rgba(TH.line, alpha);
+    ctx.lineWidth = width;
+    if (dash) { ctx.setLineDash([1, 5]); }
+    ctx.stroke();
+    if (dash) { ctx.setLineDash([]); }
+  }
+
+  function tickPath(n, r0, r1, offset) {
+    var i, a;
+    ctx.beginPath();
+    for (i = 0; i < n; i++) {
+      a = i / n * TAU + offset;
+      project(r0, a, 0, P); ctx.moveTo(P.x, P.y);
+      project(r1, a, 0, P); ctx.lineTo(P.x, P.y);
+    }
+  }
+
+  function drawDial() {
+    var i;
+    var dialK = ST.length ? 1 : 0.7;   /* 空状态时星盘更淡，只留轮廓 */
+    for (i = 0; i < RINGS.length; i++) {
+      var rg = RINGS[i];
+      strokePts(rg.pts, rg.alpha * dialK * (TH.dark ? 1.15 : 1), 0.6, rg.dash || rg.ecl);
+    }
+    /* 二十八宿分野：外缘一圈极细短刻 */
+    tickPath(28, 1, 1.03, -Math.PI / 2);
+    ctx.strokeStyle = rgba(TH.line, 0.14 * dialK); ctx.lineWidth = 0.5; ctx.stroke();
+
+    /* 时辰文字：远端更淡、更小 */
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (i = 0; i < 12; i++) {
+      project(1.13, i / 12 * TAU - Math.PI / 2, 0, P);
+      var depth = clamp((P.z + 1) / 2, 0, 1);
+      ctx.font = '300 ' + (9.5 * P.f).toFixed(1) + 'px PingFang SC, Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif';
+      ctx.fillStyle = rgba(TH.line, (0.12 + 0.26 * depth) * dialK);
+      ctx.fillText(SHICHEN[i], P.x, P.y);
+    }
+  }
+
+  /* ---------- B6 绘制：星辰 ---------- */
+  function sprite(img, x, y, size, alpha) {
+    if (alpha <= 0.004 || size < 0.5) { return; }
+    ctx.globalAlpha = alpha > 1 ? 1 : alpha;
+    ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
+  }
+
+  function drawField(dt) {
+    var i, f, e = 1 - Math.exp(-dt / 140);
+    var px = pointer.inside ? pointer.x : -9999, py = pointer.inside ? pointer.y : -9999;
+
+    /* 星官连线 */
+    ctx.beginPath();
+    for (i = 0; i < LINKS.length; i++) {
+      var A = FIELD[LINKS[i][0]], B = FIELD[LINKS[i][1]];
+      project(A.r, A.a, A.h, P); ctx.moveTo(P.x, P.y);
+      project(B.r, B.a, B.h, P); ctx.lineTo(P.x, P.y);
+    }
+    ctx.strokeStyle = rgba(TH.line, TH.dark ? 0.13 : 0.1);
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+
+    ctx.globalCompositeOperation = TH.blend;
+    for (i = 0; i < FIELD.length; i++) {
+      f = FIELD[i];
+      project(f.r, f.a, f.h, P);
+      if (P.x < -30 || P.x > W + 30 || P.y < -30 || P.y > H + 30) { continue; }
+      var dx = P.x - px, dy = P.y - py;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      f.res += ((d < 110 ? 1 - d / 110 : 0) - f.res) * e;   /* 指针附近的星光共振 */
+      var depth = clamp((P.z + 1) / 2, 0, 1);
+      var tw = reduceMotion ? 1 : 0.68 + 0.32 * Math.sin(clock * f.tw + f.ph);
+      var a = (ST.length ? 1 : 0.72) * (0.36 + 0.64 * f.mag) * tw * (f.kind === 1 ? 0.55 : 0.6 + 0.4 * depth) * (1 + 1.3 * f.res);
+      var s = Math.min(f.size * P.f, f.kind === 1 ? 1.8 : 6) * (1 + 0.7 * f.res);
+      var spk = f.spk || f.res > 0.35;
+      if (TH.dark) {
+        sprite(TH.halo, P.x, P.y, s * 7, a * TH.fieldHaloA);
+        if (spk) { sprite(TH.spike, P.x, P.y, s * 9, a * TH.spikeA * (f.spk ? 1 : f.res)); }
+        sprite(TH.core, P.x, P.y, s * 2.5, a);
+      } else {
+        /* 浅色：细十字星芒 + 紧致墨晕托出一粒白光（留白为光），不画模糊的大墨团 */
+        if (spk || f.mag > 0.3) { sprite(TH.spike, P.x, P.y, s * (spk ? 9 : 6), a * TH.spikeA * (spk ? 1 : 0.6)); }
+        sprite(TH.haloTight, P.x, P.y, s * 3.2, a * TH.fieldHaloA * 0.8);
+        sprite(TH.core, P.x, P.y, s * 2, Math.min(1, a * 1.8));
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 星轨：按时间顺序以拱形弧线串起会话星，像一道走过的路 */
+  function trailCurve(i, out) {
+    var A = ST[i], B = ST[i + 1];
+    var ax = Math.cos(A.a) * A.r, ay = Math.sin(A.a) * A.r;
+    var bx = Math.cos(B.a) * B.r, by = Math.sin(B.a) * B.r;
+    var mx = (ax + bx) / 2, my = (ay + by) / 2;
+    var len = Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+    project(Math.sqrt(mx * mx + my * my), Math.atan2(my, mx), 0.03 + len * 0.12, P);
+    out.x0 = A.px; out.y0 = A.py; out.x1 = B.px; out.y1 = B.py;
+    out.cx = 2 * P.x - (A.px + B.px) / 2;
+    out.cy = 2 * P.y - (A.py + B.py) / 2;
+    return out;
+  }
+  var CV = {};
+
+  function drawTrail() {
+    var i, N = ST.length;
+    if (N < 2) { return; }
+    for (i = 0; i < N - 1; i++) {
+      trailCurve(i, CV);
+      var near = sel >= 0 && (i === sel || i === sel - 1);
+      var age = (i + 1) / (N - 1);
+      ctx.beginPath();
+      ctx.moveTo(CV.x0, CV.y0);
+      ctx.quadraticCurveTo(CV.cx, CV.cy, CV.x1, CV.y1);
+      if (near) {
+        ctx.strokeStyle = rgba(TH.line, TH.dark ? 0.42 : 0.34);
+        ctx.lineWidth = 0.8;
+      } else {
+        ctx.strokeStyle = rgba(TH.line, (TH.dark ? 0.07 : 0.06) + age * (TH.dark ? 0.12 : 0.1));
+        ctx.lineWidth = 0.6;
+      }
+      ctx.stroke();
+    }
+    /* 选中时：一粒光珠沿相邻星轨缓缓游走 */
+    if (sel >= 0) {
+      ctx.globalCompositeOperation = TH.blend;
+      var segs = [sel - 1, sel], k;
+      for (k = 0; k < 2; k++) {
+        var si = segs[k];
+        if (si < 0 || si > N - 2) { continue; }
+        trailCurve(si, CV);
+        var t = reduceMotion ? 0.5 : (clock * 0.00028 + k * 0.5) % 1;
+        if (k === 0) { t = 1 - t; }
+        var u = 1 - t;
+        var bx = u * u * CV.x0 + 2 * u * t * CV.cx + t * t * CV.x1;
+        var by = u * u * CV.y0 + 2 * u * t * CV.cy + t * t * CV.y1;
+        var fade = Math.sin(t * Math.PI);
+        sprite(TH.haloWarm, bx, by, 12, fade * (TH.dark ? 0.5 : 0.3));
+        sprite(TH.coreWarm, bx, by, 5, fade);
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  function drawSessions(dt) {
+    var i, s, e = 1 - Math.exp(-dt / 320);
+    /* 先投影全部，供星轨与命中测试使用 */
+    for (i = 0; i < ST.length; i++) {
+      s = ST[i];
+      project(s.r, s.a, s.h, P);
+      s.px = P.x; s.py = P.y; s.pz = P.z; s.pf = P.f; s.rx = P.rx; s.ry = P.ry;
+      s.heat += ((i === sel ? 1 : 0) - s.heat) * e;
+      s.hov += ((i === hover ? 1 : 0) - s.hov) * e;
+    }
+
+    /* 选中星所在的轨道 */
+    if (sel >= 0) {
+      var so = ST[sel];
+      ctx.beginPath();
+      var n = 96, k;
+      for (k = 0; k <= n; k++) {
+        project(so.r, k / n * TAU, 0, P);
+        if (k === 0) { ctx.moveTo(P.x, P.y); } else { ctx.lineTo(P.x, P.y); }
+      }
+      ctx.strokeStyle = rgba(TH.line, 0.16 * so.heat);
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    }
+
+    drawTrail();
+
+    for (i = 0; i < ST.length; i++) { drawSessionStar(ST[i], i); }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawSessionStar(s, idx) {
+    var depth = clamp((s.pz + 1) / 2, 0, 1);
+    var breath = reduceMotion ? 1 : 1 + 0.1 * Math.sin(clock * 0.0015 + s.ph);
+    var k = s.bright * (0.7 + 0.3 * depth);
+    var hot = s.heat, cool = 1 - hot;
+    var sz = s.size * s.pf * (1 + 0.28 * hot + 0.16 * s.hov);
+    var x = s.px, y = s.py;
+
+    ctx.globalCompositeOperation = TH.blend;
+    /* 外层光晕（呼吸） + 内层光晕：双层 */
+    var outer = sz * 11 * breath, inner = sz * 4.2;
+    sprite(TH.halo, x, y, outer, k * TH.haloA * 0.9 * cool);
+    sprite(TH.haloWarm, x, y, outer * 1.15, TH.haloA * (TH.dark ? 1.6 : 1.1) * hot);
+    sprite(TH.dark ? TH.halo : TH.haloTight, x, y, inner, k * TH.haloA * (TH.dark ? 2.2 : 1.7) * cool);
+    sprite(TH.haloWarm, x, y, inner, TH.haloA * (TH.dark ? 2.6 : 1.6) * hot);
+
+    /* 十字星芒：大场次常驻，其他在悬停/选中时显现 */
+    var spikeOn = s.spike ? 1 : Math.max(s.hov, hot, TH.dark ? 0 : 0.55);
+    if (spikeOn > 0.01) {
+      var sl = sz * (s.spike ? 12 : 8) * (1 + 0.35 * s.hov + 0.5 * hot) * (reduceMotion ? 1 : 0.94 + 0.06 * Math.sin(clock * 0.0023 + s.ph));
+      sprite(TH.spike, x, y, sl, k * TH.spikeA * spikeOn * cool * 1.2);
+      sprite(TH.spikeWarm, x, y, sl, TH.spikeA * spikeOn * hot * (TH.dark ? 1.4 : 1));
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+
+    /* 光核：浅色是一粒带墨圈的素白珠，深色是纯白发光点 */
+    if (TH.dark) {
+      ctx.globalCompositeOperation = 'lighter';
+      sprite(TH.core, x, y, sz * 3, k);
+      sprite(TH.coreWarm, x, y, sz * 3.2, hot);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+    } else {
+      var g = ctx.createRadialGradient(x - sz * 0.25, y - sz * 0.3, 0, x, y, sz);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(1, '#ececea');
+      ctx.beginPath(); ctx.arc(x, y, sz, 0, TAU);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = rgba('18,18,20', 0.16 + 0.26 * k + 0.25 * hot);
+      ctx.stroke();
+    }
+
+    /* 选中：浑天仪式的准星环，缓慢转动 */
+    if (hot > 0.02) {
+      var rr = sz * 3.6 + 8, rot = reduceMotion ? 0 : clock * 0.0004;
+      ctx.globalAlpha = hot;
+      ctx.strokeStyle = rgba(TH.line, TH.dark ? 0.5 : 0.38);
+      ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.stroke();
+      ctx.beginPath();
+      var q;
+      for (q = 0; q < 4; q++) {
+        var a = rot + q * Math.PI / 2;
+        ctx.moveTo(x + Math.cos(a) * (rr + 3), y + Math.sin(a) * (rr + 3));
+        ctx.lineTo(x + Math.cos(a) * (rr + 9), y + Math.sin(a) * (rr + 9));
+      }
+      ctx.stroke();
+      ctx.setLineDash([1, 4]);
+      ctx.strokeStyle = rgba(TH.line, 0.2);
+      ctx.beginPath(); ctx.arc(x, y, rr * 1.75, -rot * 0.6, TAU - rot * 0.6); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* 空状态：盘心一枚“未显影的星位”——极淡的空心环与一粒呼吸的微光，
+     每隔几秒向外漾开一圈，像在等第一颗星落下 */
+  function drawSeed() {
+    project(0, 0, 0, P);
+    var x = P.x, y = P.y;
+    var squash = Math.max(0.3, Math.cos(view.tilt));
+    var br = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(clock * 0.0012);
+    var i;
+    /* 缓慢漾开的同心圈 */
+    if (!reduceMotion) {
+      for (i = 0; i < 2; i++) {
+        var p = ((clock / 5200) + i * 0.5) % 1;
+        var rad = 10 + p * R * 0.42;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rad, rad * squash, 0, 0, TAU);
+        ctx.strokeStyle = rgba(TH.line, 0.14 * (1 - p) * (1 - p));
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    }
+    /* 空心星位 */
+    ctx.beginPath();
+    ctx.ellipse(x, y, 11, 11 * squash, 0, 0, TAU);
+    ctx.strokeStyle = rgba(TH.line, 0.22 + 0.12 * br);
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+    /* 呼吸微光 */
+    ctx.globalCompositeOperation = TH.blend;
+    if (TH.dark) {
+      sprite(TH.halo, x, y, 26, 0.18 + 0.14 * br);
+      sprite(TH.core, x, y, 4, 0.5 + 0.4 * br);
+    } else {
+      sprite(TH.haloTight, x, y, 8, 0.16 + 0.12 * br);
+      sprite(TH.core, x, y, 3.5, 1);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ---------- B7 动效：涟漪、聚光微粒、帧循环 ---------- */
+  function addRipple(x, y, strong) {
+    if (reduceMotion && !strong) { return; }
+    RIPS.push({ x: x, y: y, t: 0, dur: strong ? 1500 : 1200, max: strong ? 90 : 46, a: strong ? 0.32 : 0.16 });
+    if (RIPS.length > 14) { RIPS.shift(); }
+  }
+
+  function drawRipples(dt) {
+    var squash = Math.max(0.3, Math.cos(view.tilt));
+    var i;
+    for (i = RIPS.length - 1; i >= 0; i--) {
+      var r = RIPS[i];
+      r.t += dt;
+      var p = r.t / r.dur;
+      if (p >= 1) { RIPS.splice(i, 1); continue; }
+      var ease = 1 - Math.pow(1 - p, 3);
+      var rad = 4 + r.max * ease;
+      ctx.beginPath();
+      ctx.ellipse(r.x, r.y, rad, rad * squash, 0, 0, TAU);
+      ctx.strokeStyle = rgba(TH.line, r.a * (1 - p) * (TH.dark ? 1.1 : 0.9));
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+      if (p < 0.5) {
+        ctx.beginPath();
+        ctx.ellipse(r.x, r.y, rad * 0.55, rad * 0.55 * squash, 0, 0, TAU);
+        ctx.strokeStyle = rgba(TH.line, r.a * 0.5 * (1 - p * 2));
+        ctx.stroke();
+      }
+    }
+  }
+
+  /* 选中时：微光从四周螺旋汇入星点，“聚集升温” */
+  function spawnMotes(n, spread) {
+    var i;
+    for (i = 0; i < n; i++) {
+      MOTES.push({
+        ang: Math.random() * TAU,
+        d0: spread * (0.5 + Math.random() * 0.8),
+        t: -Math.random() * 400,
+        dur: 900 + Math.random() * 700,
+        sz: 2 + Math.random() * 3,
+        swirl: 0.8 + Math.random() * 1.2
+      });
+    }
+  }
+
+  function drawMotes(dt) {
+    if (sel < 0) { MOTES.length = 0; return; }
+    if (!reduceMotion) {
+      moteTimer += dt;
+      if (moteTimer > 260) { moteTimer = 0; spawnMotes(1, 60); }
+    }
+    var s = ST[sel], i;
+    ctx.globalCompositeOperation = TH.blend;
+    for (i = MOTES.length - 1; i >= 0; i--) {
+      var m = MOTES[i];
+      m.t += dt;
+      if (m.t < 0) { continue; }
+      var p = m.t / m.dur;
+      if (p >= 1) { MOTES.splice(i, 1); continue; }
+      var e = p * p * (3 - 2 * p);
+      var d = m.d0 * (1 - e);
+      var a = m.ang + e * m.swirl;
+      var x = s.px + Math.cos(a) * d, y = s.py + Math.sin(a) * d;
+      var al = Math.sin(p * Math.PI);
+      sprite(TH.haloWarm, x, y, m.sz * 3, al * (TH.dark ? 0.35 : 0.22));
+      sprite(TH.coreWarm, x, y, m.sz, al * 0.9);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function physics(dt) {
+    if (!view.dragging) {
+      view.rot += view.vel * dt;
+      view.vel *= Math.exp(-dt / 900);                     /* 惯性阻尼 */
+      if (sel < 0 && !reduceMotion) { view.rot += AUTO_SPIN * dt; }
+      /* 俯仰弹簧：松手后回到静止角度，带一点点过冲 */
+      var acc = -(view.tilt - T_REST) * 0.000032 - view.tiltV * 0.0092;
+      view.tiltV += acc * dt;
+      view.tilt += view.tiltV * dt;
+    }
+  }
+
+  function updateHover() {
+    var h = -1;
+    if (pointer.inside && !pointer.touch && !view.dragging) { h = hitTest(pointer.x, pointer.y, 26); }
+    if (h !== hover) {
+      hover = h;
+    }
+    refs.canvas.style.cursor = view.dragging ? 'grabbing' : (hover >= 0 ? 'pointer' : 'grab');
+  }
+
+  function frame(ts) {
+    if (!running) { return; }
+    var dt = lastTs ? Math.min(ts - lastTs, 50) : 16;
+    lastTs = ts;
+    clock += dt;
+
+    physics(dt);
+    updateCamera(dt);
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    drawSky();
+    drawDial();
+    drawField(dt);
+    if (ST.length) { drawSessions(dt); } else { drawSeed(); }
+    drawMotes(dt);
+    drawRipples(dt);
+    updateHover();
+
+    rafId = win.requestAnimationFrame(frame);
+  }
+
+  function startLoop() {
+    if (running) { return; }
+    running = true; lastTs = 0;
+    rafId = win.requestAnimationFrame(frame);
+  }
+  function stopLoop() {
+    running = false;
+    if (rafId) { win.cancelAnimationFrame(rafId); rafId = 0; }
+  }
+
+  /* ---------- B8 交互 ---------- */
+  function hitTest(x, y, radius) {
+    var best = -1, bd = radius, i;
+    for (i = 0; i < ST.length; i++) {
+      var dx = ST[i].px - x, dy = ST[i].py - y;
+      var d = Math.sqrt(dx * dx + dy * dy) - ST[i].size * ST[i].pf * 0.5;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+
+  function hideHint() { if (refs.hint) { refs.hint.classList.add('gone'); } }
+
+  function bindInteractions() {
+    var cv = refs.canvas;
+    var drag = { on: false, x: 0, y: 0, lt: 0, moved: 0, touch: false, id: null };
+
+    function down(x, y, touch) {
+      drag.on = true; drag.x = x; drag.y = y; drag.lt = nowMs(); drag.moved = 0; drag.touch = touch;
+      view.vel = 0; view.dragging = true; view.tiltV = 0;
+      pointer.x = x; pointer.y = y; pointer.inside = true; pointer.touch = touch;
+    }
+    function move(x, y, touch) {
+      var mdx = x - pointer.x, mdy = y - pointer.y;
+      pointer.x = x; pointer.y = y; pointer.inside = true; pointer.touch = touch;
+      /* 指针划过：累积距离后激起一圈幽微涟漪 */
+      pointer.acc += Math.sqrt(mdx * mdx + mdy * mdy);
+      if (pointer.acc > 90 && clock - pointer.lastRip > 160) {
+        pointer.acc = 0; pointer.lastRip = clock; addRipple(x, y, false);
+      }
+      if (!drag.on) { return; }
+      var dx = x - drag.x, dy = y - drag.y, t = nowMs(), dtm = Math.max(8, t - drag.lt);
+      drag.moved += Math.abs(dx) + Math.abs(dy);
+      if (drag.moved > 8) { hideHint(); cam.follow = false; }
+      var dr = -dx / R * 1.05;   /* 近侧（下半）跟手 */
+      view.rot += dr;
+      view.vel = view.vel * 0.55 + (dr / dtm) * 0.45;
+      /* 俯仰：越过边界有橡皮筋阻力 */
+      var nt = view.tilt + dy * 0.0042;
+      if (nt < T_MIN || nt > T_MAX) { nt = view.tilt + dy * 0.0012; }
+      view.tilt = clamp(nt, T_MIN - 0.12, T_MAX + 0.1);
+      drag.x = x; drag.y = y; drag.lt = t;
+    }
+    function up(x, y) {
+      if (!drag.on) { return; }
+      drag.on = false; view.dragging = false;
+      if (nowMs() - drag.lt > 90) { view.vel = 0; }       /* 停顿后松手不甩动 */
+      view.vel = clamp(view.vel, -0.006, 0.006);
+      if (drag.moved < 8) { tap(x, y, drag.touch); }
+      if (drag.touch) { pointer.inside = false; }
+    }
+
+    if (win.PointerEvent) {
+      cv.addEventListener('pointerdown', function (e) {
+        if (e.button > 0) { return; }
+        drag.id = e.pointerId;
+        try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+        down(e.clientX, e.clientY, e.pointerType !== 'mouse');
+      });
+      cv.addEventListener('pointermove', function (e) {
+        if (drag.on && e.pointerId !== drag.id) { return; }
+        move(e.clientX, e.clientY, e.pointerType !== 'mouse');
+      });
+      cv.addEventListener('pointerup', function (e) { up(e.clientX, e.clientY); });
+      cv.addEventListener('pointercancel', function () { drag.on = false; view.dragging = false; pointer.inside = false; });
+      cv.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !drag.on) { pointer.inside = false; } });
+    } else {
+      cv.addEventListener('touchstart', function (e) { var t = e.touches[0]; down(t.clientX, t.clientY, true); e.preventDefault(); }, { passive: false });
+      cv.addEventListener('touchmove', function (e) { var t = e.touches[0]; move(t.clientX, t.clientY, true); e.preventDefault(); }, { passive: false });
+      cv.addEventListener('touchend', function (e) { var t = e.changedTouches[0]; up(t.clientX, t.clientY); });
+      cv.addEventListener('mousedown', function (e) { down(e.clientX, e.clientY, false); });
+      win.addEventListener('mousemove', function (e) { move(e.clientX, e.clientY, false); });
+      win.addEventListener('mouseup', function (e) { up(e.clientX, e.clientY); });
+    }
+
+    /* 键盘：左右键在会话之间按时间切换；回车展开全篇；Esc 收起 */
+    cv.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (!ST.length) { return; }
+      if (k === 'ArrowRight' || k === 'ArrowLeft') {
+        var base = sel >= 0 ? sel : ST.length - 1;
+        var nx = sel < 0 ? base : (base + (k === 'ArrowRight' ? 1 : -1) + ST.length) % ST.length;
+        selectSession(nx);
+        e.preventDefault();
+      } else if (k === 'Enter' && sel >= 0) {
+        openView();
+      } else if (k === 'Escape') {
+        closeCard();
+      }
+    });
+    doc.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && refs.ovSession && !refs.ovSession.hidden) { closeOverlay(); }
+    });
+  }
+
+  function tap(x, y, touch) {
+    var idx = hitTest(x, y, touch ? 40 : 28);
+    if (idx >= 0) {
+      selectSession(idx);
+    } else {
+      addRipple(x, y, true);
+      if (sel >= 0) { closeCard(); }
+    }
+  }
+
+  /* ---------- B9 卡片与全篇 / 回放 ---------- */
+  function selectSession(idx) {
+    var fresh = idx !== sel;
+    sel = idx;
+    cam.follow = true;
+    view.vel = 0;
+    var s = ST[idx];
+    curSess = s.sess;
+    if (fresh) {
+      MOTES.length = 0;
+      spawnMotes(reduceMotion ? 0 : 26, 110);
+      addRipple(s.px, s.py, true);
+    }
+
+    refs.cno.textContent = curSess.no;
+    refs.meta.textContent = formatDate(curSess.startedAt);
+    var sc = el('span', 'sc', shichenOf(curSess.startedAt));
+    refs.meta.appendChild(sc);
+    refs.msg.textContent = '共 ' + (curSess.msgCount || 0) + ' 段';
+    var mins = curSess.endedAt ? Math.max(1, Math.round((curSess.endedAt - curSess.startedAt) / 60000)) : 0;
+    if (refs.dur) { refs.dur.textContent = mins ? '历时 ' + mins + ' 分' : '时长未知'; }
+    var decks = curSess.decks ? (Array.isArray(curSess.decks) ? curSess.decks.join('、') : curSess.decks) : '字卡';
+    refs.deck.textContent = decks;
+
+    var card = refs.card;
+    card.hidden = false;
+    void card.offsetHeight;
+    card.classList.add('on');
+    if (refs.foot) { refs.foot.classList.add('off'); }
+  }
+
+  function closeCard() {
+    sel = -1;
+    cam.follow = false;
+    var card = refs.card;
+    card.classList.remove('on');
+    if (refs.foot) { refs.foot.classList.remove('off'); }
+    win.setTimeout(function () { if (sel === -1) { card.hidden = true; } }, 620);
+  }
+
+  var replay = { running: false, timer: 0, idx: 0 };
+
+  function renderEvents(list) {
+    var box = refs.sessHist;
+    box.textContent = '';
+    var i, j;
+    for (i = 0; i < list.length; i++) {
+      var ev = list[i];
+      var seg = el('div', 'ev' + (ev.who === 'me' ? ' me' : ''));
+      if (ev.who === 'me') {
+        seg.appendChild(el('div', 'ev-q', ev.text || ''));
+      } else {
+        var row = el('div', 'ev-row');
+        var cards = ev.cards || [];
+        for (j = 0; j < cards.length; j++) {
+          var c = cards[j], t;
+          if (c.kind === 'tarot') {
+            t = el('div', 'tile tf');
+            if (c.num) { t.appendChild(el('span', 'tn', c.num)); }
+            t.appendChild(el('span', 'nm', c.name || ''));
+            t.appendChild(el('span', 'kw', (c.side === 'reversed' ? '逆位 ' + c.reversed : c.upright)));
+          } else if (c.image) {
+            t = el('div', 'tile');
+            var img = doc.createElement('img'); img.src = c.image; img.alt = c.text || '';
+            t.appendChild(img);
+          } else {
+            t = el('div', 'tile', c.text || c.name || '');
+          }
+          row.appendChild(t);
+        }
+        seg.appendChild(row);
+      }
+      seg.appendChild(el('span', 'ev-tm', formatDate(ev.at).slice(11)));
+      box.appendChild(seg);
+    }
+  }
+
+  function openOverlay(title, withReplay) {
+    refs.sessTitle.textContent = title;
+    refs.replayBar.hidden = !withReplay;
+    refs.sessHist.textContent = '';
+    if (O.ui && O.ui.openOv) { O.ui.openOv(refs.ovSession, refs.sessClose); }
+    stopLoop();   /* 覆盖层盖住星空时暂停渲染，省电 */
+    return O.db.loadEvents(curSess.no).then(function (list) { events = list || []; });
+  }
+
+  function closeOverlay() {
+    replay.running = false;
+    win.clearTimeout(replay.timer);
+    if (O.ui && O.ui.closeOv) { O.ui.closeOv(refs.ovSession); }
+    startLoop();
+    refs.canvas.focus();
+  }
+
+  function openView() {
+    if (!curSess) { return; }
+    openOverlay('No.' + curSess.no + '　全篇', false).then(function () { renderEvents(events); });
+  }
+
+  function openReplay() {
+    if (!curSess) { return; }
+    openOverlay('No.' + curSess.no + '　回放', true).then(function () {
+      replay.idx = 0;
+      replay.running = true;
+      refs.playBtn.textContent = '暂停';
+      renderProgress();
+      tickReplay();
+    });
+  }
+
+  function renderProgress() {
+    var n = events.length;
+    var ratio = n ? replay.idx / n : 0;
+    refs.fill.style.width = (ratio * 100) + '%';
+    refs.knob.style.left = (ratio * 100) + '%';
+    refs.clk.textContent = replay.idx + '/' + n;
+  }
+
+  function tickReplay() {
+    if (!replay.running) { return; }
+    if (replay.idx >= events.length) {
+      replay.running = false;
+      refs.playBtn.textContent = '重播';
+      return;
+    }
+    replay.idx += 1;
+    renderEvents(events.slice(0, replay.idx));
+    renderProgress();
+    var body = refs.sessHist.parentNode;
+    body.scrollTop = body.scrollHeight;
+    replay.timer = win.setTimeout(tickReplay, 1150);
+  }
+
+  function togglePlay() {
+    if (replay.running) {
+      replay.running = false;
+      win.clearTimeout(replay.timer);
+      refs.playBtn.textContent = '播放';
+    } else {
+      if (replay.idx >= events.length) { replay.idx = 0; }
+      replay.running = true;
+      refs.playBtn.textContent = '暂停';
+      tickReplay();
+    }
+  }
+
+  function seek(e) {
+    var rect = refs.track.getBoundingClientRect();
+    var ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+    replay.idx = Math.round(ratio * events.length);
+    renderEvents(events.slice(0, replay.idx));
+    renderProgress();
+  }
+
+  /* 主题切换：画布淡出 → 重建精灵 → 淡入 */
+  function onThemeChange() {
+    refs.canvas.style.opacity = '0';
+    win.setTimeout(function () {
+      buildTheme();
+      refs.canvas.style.opacity = '1';
+    }, 320);
+  }
+
+  /* ---------- 对外接口 ---------- */
+  function open() {
+    resize();
+    return O.db.loadSessions().then(function (res) {
+      /* 重新打开时清掉上一次的选中与动效 */
+      if (sel >= 0) { closeCard(); }
+      sel = -1; hover = -1; MOTES.length = 0; RIPS.length = 0;
+      sessions = res || [];
+      var has = sessions.length > 0;
+      emptyMode = !has;
+      resize();
+      buildModel();
+      refs.cnt.textContent = has ? '共 ' + sessions.length + ' 场会话' : '尚无会话';
+      refs.empty.hidden = has;
+      if (refs.foot) {
+        /* 空状态没有可解读的星，图例与手势提示一并收起，只留星盘与文字 */
+        refs.foot.style.visibility = has ? '' : 'hidden';
+      }
+      refs.canvas.setAttribute('aria-label', has ? '星图：拖动旋转星盘，左右方向键在会话之间切换' : '星图：还没有会话记录');
+      startLoop();
+    });
+  }
+
+  function close() {
+    stopLoop();
+    closeCard();
+  }
+
+  function mount(r) {
+    refs = r;
+    if (!refs || !refs.canvas) { return; }
+    ctx = refs.canvas.getContext('2d');
+    buildTheme();
+    resize();
+    bindInteractions();
+
+    var rt = 0;
+    win.addEventListener('resize', function () {
+      win.clearTimeout(rt);
+      rt = win.setTimeout(function () { resize(); buildModel(); }, 120);
+    });
+    doc.addEventListener('visibilitychange', function () {
+      if (doc.hidden) { stopLoop(); } else if (refs.ovSession.hidden) { startLoop(); }
+    });
+    if (win.MutationObserver) {
+      themeObs = new win.MutationObserver(function () {
+        var d = doc.documentElement.classList.contains('dark');
+        if (TH && d !== TH.dark) { onThemeChange(); }
+      });
+      themeObs.observe(doc.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    refs.cardClose.addEventListener('click', closeCard);
+    refs.btnView.addEventListener('click', openView);
+    refs.btnReplay.addEventListener('click', openReplay);
+    refs.sessClose.addEventListener('click', closeOverlay);
+    refs.playBtn.addEventListener('click', togglePlay);
+    refs.track.addEventListener('click', seek);
+  }
+
+  O.starmap = { mount: mount, open: open, close: close };
+})(window);
+
+/* =====================================================================
+   C. 启动
+   ===================================================================== */
+document.addEventListener('DOMContentLoaded', function () {
+  var $ = function (id) { return document.getElementById(id); };
+  window.Oracle.starmap.mount({
+    canvas: $('smCanvas'), stage: $('starmapStage'), empty: $('smEmpty'),
+    foot: $('smFoot'), hint: $('smHint'), cnt: $('smCnt'),
+    card: $('smCard'), cno: $('smCno'), meta: $('smMeta'), msg: $('smMsg'), dur: $('smDur'), deck: $('smDeck'),
+    cardClose: $('smCardClose'), btnView: $('smBtnView'), btnReplay: $('smBtnReplay'),
+    ovSession: $('ovSession'), sessTitle: $('sessTitle'), sessClose: $('sessClose'), sessHist: $('sessHist'),
+    replayBar: $('replayBar'), playBtn: $('playBtn'), track: $('sessTrack'), fill: $('sessFill'), knob: $('sessKnob'), clk: $('sessClk')
+  });
+  window.Oracle.starmap.open();
+});
+</script>
+</body>
+</html>

@@ -320,9 +320,9 @@
   top: 4px;
   bottom: 4px;
   background: linear-gradient(180deg, 
-    rgba(179, 130, 42, 0.08) 0%, 
-    rgba(179, 130, 42, 0.02) 50%, 
-    rgba(179, 130, 42, 0.08) 100%
+    rgba(194, 59, 50, 0.09) 0%, 
+    rgba(194, 59, 50, 0.02) 50%, 
+    rgba(194, 59, 50, 0.09) 100%
   );
   pointer-events: none;
   border-left: 0;
@@ -333,9 +333,9 @@
 
 html.dark .wave-fill {
   background: linear-gradient(180deg, 
-    rgba(212, 163, 75, 0.15) 0%, 
-    rgba(212, 163, 75, 0.03) 50%, 
-    rgba(212, 163, 75, 0.15) 100%
+    rgba(235, 87, 87, 0.16) 0%, 
+    rgba(235, 87, 87, 0.03) 50%, 
+    rgba(235, 87, 87, 0.16) 100%
   );
 }
 
@@ -390,24 +390,24 @@ html.dark .wave-fill {
 .wave-thumb:hover::after,
 .wave-thumb:active::after {
   transform: scale(1.3);
-  border-color: #b3822a;
-  box-shadow: 0 0 12px rgba(179, 130, 42, 0.6);
+  border-color: #c23b32;
+  box-shadow: 0 0 12px rgba(194, 59, 50, 0.6);
 }
 
 html.dark .wave-thumb:hover::after,
 html.dark .wave-thumb:active::after {
-  border-color: #e0b35e;
-  box-shadow: 0 0 12px rgba(224, 179, 94, 0.7);
+  border-color: #eb5757;
+  box-shadow: 0 0 12px rgba(235, 87, 87, 0.7);
 }
 
 .wave-thumb:hover::before,
 .wave-thumb:active::before {
   opacity: 0.85;
-  background: #b3822a;
+  background: #c23b32;
 }
 html.dark .wave-thumb:hover::before,
 html.dark .wave-thumb:active::before {
-  background: #e0b35e;
+  background: #eb5757;
 }
 
 /* 精确刻度轴 */

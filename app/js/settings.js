@@ -111,9 +111,9 @@
 
       var isDark = doc.documentElement.classList.contains('dark');
       var muteColor = isDark ? 'rgba(241, 241, 243, 0.13)' : 'rgba(18, 18, 20, 0.11)';
-      var activeGlow = isDark ? 'rgba(212, 163, 75, 0.38)' : 'rgba(179, 130, 42, 0.28)';
-      var activeColor = isDark ? '#e0b35e' : '#a8731d';
-      var filamentColor = isDark ? 'rgba(224, 179, 94, 0.18)' : 'rgba(168, 115, 29, 0.14)';
+      var activeGlow = isDark ? 'rgba(235, 87, 87, 0.42)' : 'rgba(194, 59, 50, 0.32)';
+      var activeColor = isDark ? '#eb5757' : '#c23b32';
+      var filamentColor = isDark ? 'rgba(235, 87, 87, 0.22)' : 'rgba(194, 59, 50, 0.16)';
 
       var p1 = (values[0] - min) / (max - min);
       var p2 = (values[1] - min) / (max - min);
