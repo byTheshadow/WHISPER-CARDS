@@ -16,6 +16,7 @@
   var mode = 'memory';
   var reason = '';
   var opening = null;
+  var settled = false;   /* ready() 有没有结论；没结论之前别对外报存储种类 */
   var cache = { decks: null, sessions: null, events: {} };
 
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
@@ -119,6 +120,7 @@
 
   function ready() {
     if (opening) { return opening; }
+    settled = false;
     opening = tryIdb().then(function (r) {
       if (r.ok) {
         mode = 'indexeddb';
@@ -129,6 +131,7 @@
       mode = 'memory';
       return mode;
     });
+    opening.then(function () { settled = true; }, function () { settled = true; });
     return opening;
   }
 
@@ -268,6 +271,9 @@
   }
 
   function label() {
+    /* 首屏那几秒还不知道落在哪种存储上（IndexedDB 打开可能很久），
+       这时写「内存（不会保留）」会把人吓一跳，先如实说在读。 */
+    if (!settled) { return '读取中…'; }
     if (mode === 'indexeddb') { return 'IndexedDB'; }
     if (mode === 'localStorage') { return 'localStorage（降级）'; }
     if (reason) { return '内存（' + reason + '）'; }
