@@ -311,6 +311,66 @@
     return { node: wrap, set: set, get: function () { return value; } };
   }
 
+  /* 自定义内建确认弹窗（替代原生 window.confirm） */
+  function confirmDialog(opts) {
+    return new Promise(function (resolve) {
+      var o = opts || {};
+      var overlay = el('div', 'ui-confirm-mask');
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+
+      var box = el('div', 'ui-confirm-box');
+      if (o.title) {
+        var ttl = el('h3', 'ui-confirm-title', o.title);
+        box.appendChild(ttl);
+      }
+      var msg = el('p', 'ui-confirm-msg', o.msg || '是否确认此操作？');
+      box.appendChild(msg);
+
+      var actions = el('div', 'ui-confirm-actions');
+      var btnCancel = el('button', 'ui-confirm-btn cancel', o.cancelText || '取消');
+      btnCancel.type = 'button';
+      var btnOk = el('button', 'ui-confirm-btn ok' + (o.danger ? ' danger' : ''), o.okText || '确认');
+      btnOk.type = 'button';
+
+      actions.appendChild(btnCancel);
+      actions.appendChild(btnOk);
+      box.appendChild(actions);
+      overlay.appendChild(box);
+      doc.body.appendChild(overlay);
+
+      function cleanup(val) {
+        if (!overlay.parentNode) { return; }
+        overlay.classList.remove('on');
+        doc.body.classList.remove('lock');
+        win.setTimeout(function () {
+          if (overlay.parentNode) { overlay.parentNode.removeChild(overlay); }
+        }, 220);
+        resolve(val);
+      }
+
+      btnCancel.addEventListener('click', function () { cleanup(false); });
+      btnOk.addEventListener('click', function () { cleanup(true); });
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) { cleanup(false); }
+      });
+      function onKey(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          win.removeEventListener('keydown', onKey);
+          cleanup(false);
+        }
+      }
+      win.addEventListener('keydown', onKey);
+
+      doc.body.classList.add('lock');
+      win.setTimeout(function () {
+        overlay.classList.add('on');
+        btnOk.focus();
+      }, 20);
+    });
+  }
+
   O.ui = {
     el: el,
     openOv: openOv,
@@ -320,6 +380,7 @@
     segCtl: segCtl,
     foldCtl: foldCtl,
     stepCtl: stepCtl,
-    holdSheet: holdSheet
+    holdSheet: holdSheet,
+    confirm: confirmDialog
   };
 })(window);

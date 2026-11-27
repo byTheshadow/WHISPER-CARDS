@@ -149,11 +149,13 @@
     acts.appendChild(clearBtn);
 
     if (deckKey === 'word' || deckKey === 'special' || deckKey === 'tarot') {
-      var restore = el('button', 'ab r', '恢复内置');
-      restore.type = 'button';
-      restore.disabled = !deck || deck.source === 'builtin';
-      restore.addEventListener('click', function () { restoreDeck(deckKey); });
-      acts.appendChild(restore);
+      var isDefaultIntact = deck && deck.source === 'builtin' && count(deck) > 0;
+      if (!isDefaultIntact) {
+        var restore = el('button', 'ab r', '恢复内置');
+        restore.type = 'button';
+        restore.addEventListener('click', function () { restoreDeck(deckKey); });
+        acts.appendChild(restore);
+      }
     }
 
     acts.appendChild(el('i', 'sep'));
@@ -184,11 +186,18 @@
   function onDeleteDeck(deckKey) {
     var deck = decks[deckKey];
     var name = (deck && deck.name) || LABEL[deckKey] || '此牌堆';
-    var sure = win.confirm('确认完全删除「' + name + '」？此操作不可撤销。');
-    if (!sure) { return; }
-    delete decks[deckKey];
-    mutateSeq += 1;
-    O.db.saveDecks(decks).then(render);
+    O.ui.confirm({
+      title: '确认删除牌堆',
+      msg: '确认完全删除「' + name + '」？此操作不可撤销。',
+      okText: '确认删除',
+      cancelText: '取消',
+      danger: true
+    }).then(function (sure) {
+      if (!sure) { return; }
+      delete decks[deckKey];
+      mutateSeq += 1;
+      O.db.saveDecks(decks).then(render);
+    });
   }
 
   function render() {
@@ -453,18 +462,24 @@
 
   function restoreDeck(deckKey) {
     if (!decks || !decks[deckKey]) { return; }
-    mutateSeq += 1;
     var deck = decks[deckKey];
     var fresh = O.builtin.fresh(deckKey);
-    var sure = win.confirm('用内置的 ' + count(fresh) + ' 张替换现在的 ' + count(deck) + ' 张？');
-    if (!sure) { return; }
-    var prev = decks[deckKey];
-    decks[deckKey] = fresh;
-    O.db.saveDecks(decks).then(function () {
-      render();
-    }).then(null, function () {
-      decks[deckKey] = prev;
-      win.alert('保存失败：本机存储不可用，牌堆没有改动。');
+    O.ui.confirm({
+      title: '恢复内置牌堆',
+      msg: '确认用内置的 ' + count(fresh) + ' 张替换现在的 ' + count(deck) + ' 张？',
+      okText: '确认恢复',
+      cancelText: '取消'
+    }).then(function (sure) {
+      if (!sure) { return; }
+      mutateSeq += 1;
+      var prev = decks[deckKey];
+      decks[deckKey] = fresh;
+      O.db.saveDecks(decks).then(function () {
+        render();
+      }).then(null, function () {
+        decks[deckKey] = prev;
+        win.alert('保存失败：本机存储不可用，牌堆没有改动。');
+      });
     });
   }
 

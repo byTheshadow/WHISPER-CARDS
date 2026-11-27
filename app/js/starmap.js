@@ -446,16 +446,17 @@
       var depth = clamp((P.z + 1) / 2, 0, 1);
       var tw = reduceMotion ? 1 : 0.68 + 0.32 * Math.sin(clock * f.tw + f.ph);
       var a = introAt(150 + f.r * 900, 900) * (f.kind === 1 ? 1 - 0.35 * emptyK : 1 - 0.8 * emptyK) * (0.36 + 0.64 * f.mag) * tw * (f.kind === 1 ? 0.55 : 0.6 + 0.4 * depth) * (1 + 1.3 * f.res);
-      var s = Math.min(f.size * P.f, f.kind === 1 ? 1.8 : 6) * (1 + 0.7 * f.res);
-      var spk = f.spk || f.res > 0.35;
+      var s = Math.min(f.size * P.f, f.kind === 1 ? 1.4 : 3.6) * (1 + 0.4 * f.res);
       if (TH.dark) {
-        sprite(TH.halo, P.x, P.y, s * 7, a * TH.fieldHaloA);
-        if (spk) { sprite(TH.spike, P.x, P.y, s * 9, a * TH.spikeA * (f.spk ? 1 : f.res)); }
-        sprite(TH.core, P.x, P.y, s * 2.5, a);
+        a *= 0.38;
+        sprite(TH.halo, P.x, P.y, s * 4.2, a * TH.fieldHaloA * 0.4);
+        if (f.res > 0.45) { sprite(TH.spike, P.x, P.y, s * 6, a * TH.spikeA * f.res * 0.5); }
+        sprite(TH.core, P.x, P.y, s * 1.8, a * 0.55);
       } else {
-        if (spk || f.mag > 0.3) { sprite(TH.spike, P.x, P.y, s * (spk ? 9 : 6), a * TH.spikeA * (spk ? 1 : 0.6)); }
-        sprite(TH.haloTight, P.x, P.y, s * 3.2, a * TH.fieldHaloA * 0.8);
-        sprite(TH.core, P.x, P.y, s * 2, Math.min(1, a * 1.8));
+        a *= 0.55;
+        if (f.res > 0.45) { sprite(TH.spike, P.x, P.y, s * 6, a * TH.spikeA * f.res * 0.5); }
+        sprite(TH.haloTight, P.x, P.y, s * 2.8, a * TH.fieldHaloA * 0.5);
+        sprite(TH.core, P.x, P.y, s * 1.8, Math.min(1, a * 1.2));
       }
     }
     ctx.globalAlpha = 1;
@@ -583,18 +584,19 @@
     alphaMul = vis;
 
     var depth = clamp((s.pz + 1) / 2, 0, 1);
-    var breath = reduceMotion ? 1 : 1 + 0.1 * Math.sin(clock * 0.0015 + s.ph);
+    var breath = reduceMotion ? 1 : 1 + 0.12 * Math.sin(clock * 0.0018 + s.ph);
     var k = s.bright * (0.7 + 0.3 * depth);
     var hot = s.heat, cool = 1 - hot;
-    var sz = s.size * s.pf * (1 + 0.28 * hot + 0.16 * s.hov + 0.3 * flick) * (0.55 + 0.45 * vis + 0.35 * bloom);
+    var sz = s.size * s.pf * (1 + 0.32 * hot + 0.18 * s.hov + 0.3 * flick) * (0.6 + 0.4 * vis + 0.35 * bloom);
     var x = s.px, y = s.py;
 
     ctx.globalCompositeOperation = TH.blend;
-    var outer = sz * 11 * breath, inner = sz * 4.2;
+    var outer = sz * 13 * breath, inner = sz * 4.8;
+    sprite(TH.haloWarm, x, y, outer * 1.35, (TH.dark ? 0.85 : 0.5) * vis);
     sprite(TH.halo, x, y, outer, k * TH.haloA * 0.9 * cool);
-    sprite(TH.haloWarm, x, y, outer * 1.15, TH.haloA * (TH.dark ? 1.6 : 1.1) * hot);
-    sprite(TH.dark ? TH.halo : TH.haloTight, x, y, inner, k * TH.haloA * (TH.dark ? 2.2 : 1.7) * cool);
-    sprite(TH.haloWarm, x, y, inner, TH.haloA * (TH.dark ? 2.6 : 1.6) * hot);
+    sprite(TH.haloWarm, x, y, outer * 1.15, TH.haloA * (TH.dark ? 1.8 : 1.2) * hot);
+    sprite(TH.dark ? TH.halo : TH.haloTight, x, y, inner, k * TH.haloA * (TH.dark ? 2.4 : 1.8) * cool);
+    sprite(TH.haloWarm, x, y, inner, TH.haloA * (TH.dark ? 2.8 : 1.8) * hot);
     if (bloom > 0.01) {
       alphaMul = 1;
       sprite(TH.halo, x, y, sz * 26 * (0.6 + 0.4 * bloom), bloom * (TH.dark ? 0.55 : 0.4));
@@ -602,22 +604,33 @@
       alphaMul = vis;
     }
 
-    var spikeOn = s.spike ? 1 : Math.max(s.hov, hot, TH.dark ? 0 : 0.55);
-    if (spikeOn > 0.01) {
-      var sl = sz * (s.spike ? 12 : 8) * (1 + 0.35 * s.hov + 0.5 * hot) * (reduceMotion ? 1 : 0.94 + 0.06 * Math.sin(clock * 0.0023 + s.ph));
-      sprite(TH.spike, x, y, sl, k * TH.spikeA * spikeOn * cool * 1.2);
-      sprite(TH.spikeWarm, x, y, sl, TH.spikeA * spikeOn * hot * (TH.dark ? 1.4 : 1));
-    }
+    /* 真实历史星星：长显晶莹璀璨的金色神圣四芒星辉 */
+    var spikeOn = Math.max(0.72, s.hov, hot);
+    var sl = sz * 10 * (1 + 0.35 * s.hov + 0.5 * hot) * (reduceMotion ? 1 : 0.94 + 0.06 * Math.sin(clock * 0.0023 + s.ph));
+    sprite(TH.spikeWarm, x, y, sl * 1.25, (TH.dark ? 1.1 : 0.75) * spikeOn * vis);
+    sprite(TH.spike, x, y, sl * 0.9, (TH.dark ? 0.9 : 0.6) * spikeOn * vis);
+
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
 
+    /* 专属神圣流金脉冲光环（Celestial Aura Ring） */
+    var pRing = sz * (2.8 + 0.4 * Math.sin(clock * 0.0024 + s.ph));
+    ctx.beginPath();
+    ctx.arc(x, y, pRing, 0, TAU);
+    ctx.strokeStyle = TH.dark
+      ? 'rgba(235, 185, 95, ' + ((0.42 + 0.28 * Math.sin(clock * 0.0024 + s.ph)) * vis).toFixed(3) + ')'
+      : 'rgba(180, 115, 45, ' + (0.35 * vis).toFixed(3) + ')';
+    ctx.lineWidth = 0.85;
+    ctx.stroke();
+
     if (TH.dark) {
       ctx.globalCompositeOperation = 'lighter';
-      sprite(TH.core, x, y, sz * 3, k);
-      sprite(TH.coreWarm, x, y, sz * 3.2, hot);
+      sprite(TH.coreWarm, x, y, sz * 4.6, vis);
+      sprite(TH.core, x, y, sz * 2.8, k * vis);
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
     } else {
+      sprite(TH.coreWarm, x, y, sz * 4.2, 0.9 * vis);
       var g = ctx.createRadialGradient(x - sz * 0.25, y - sz * 0.3, 0, x, y, sz);
       g.addColorStop(0, '#ffffff');
       g.addColorStop(1, '#ececea');
@@ -628,6 +641,17 @@
       ctx.strokeStyle = rgba('18,18,20', 0.16 + 0.26 * k + 0.25 * hot);
       ctx.stroke();
       ctx.globalAlpha = 1;
+    }
+
+    /* 历史星星常驻专属标签编号提示，一眼可辨 */
+    if (s.dev >= 0.85 && s.sess && s.sess.no) {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = '400 9px ' + TAG_FONT;
+      ctx.fillStyle = TH.dark ? 'rgba(235, 195, 120, 0.78)' : 'rgba(110, 80, 25, 0.75)';
+      ctx.fillText('No.' + s.sess.no, x, y + pRing + 3);
+      ctx.restore();
     }
 
     /* 衍射环：消息多的大星外一圈极细光环 */

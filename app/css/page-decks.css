@@ -19,6 +19,17 @@
 
 .sum { margin: 10px 0 18px; font-size: 11.5px; letter-spacing: 0.3em; color: var(--mute); }
 
+@keyframes deckFloatIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .dk {
   border: 1px solid var(--hair);
   border-radius: 4px;
@@ -26,7 +37,14 @@
   margin-bottom: 18px;
   background: var(--bg);
   box-shadow: 0 6px 18px var(--glow2);
+  animation: deckFloatIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.dk:nth-child(1) { animation-delay: 0.03s; }
+.dk:nth-child(2) { animation-delay: 0.08s; }
+.dk:nth-child(3) { animation-delay: 0.13s; }
+.dk:nth-child(4) { animation-delay: 0.18s; }
+.dk:nth-child(5) { animation-delay: 0.23s; }
 
 .dh { display: flex; align-items: baseline; }
 
@@ -363,4 +381,93 @@ html.dark .ab.del { color: #ff6b6b; }
   color: var(--ink);
   border-color: var(--ink);
   background: var(--glow2);
+}
+
+@keyframes ovSlideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ov.on .ovc {
+  animation: ovSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.gw .tf {
+  animation: deckFloatIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 自定义内建确认弹窗 */
+.ui-confirm-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .ui-confirm-mask {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+.ui-confirm-mask.on {
+  opacity: 1; pointer-events: auto;
+}
+.ui-confirm-box {
+  width: 100%; max-width: 320px;
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  box-shadow: 0 16px 36px var(--glow2);
+  padding: 22px 20px 16px;
+  text-align: center;
+  transform: translateY(14px) scale(0.96);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ui-confirm-mask.on .ui-confirm-box {
+  transform: translateY(0) scale(1);
+}
+.ui-confirm-title {
+  margin: 0 0 10px;
+  font-size: 14px; letter-spacing: 0.3em; font-weight: 400;
+  color: var(--ink);
+}
+.ui-confirm-msg {
+  margin: 0 0 20px;
+  font-size: 12px; line-height: 1.8; letter-spacing: 0.08em;
+  color: var(--ink2);
+}
+.ui-confirm-actions {
+  display: flex; align-items: center; justify-content: center;
+  border-top: 1px solid var(--hair);
+  padding-top: 14px;
+}
+.ui-confirm-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12.5px; letter-spacing: 0.2em;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink2);
+  cursor: pointer;
+  margin: 0 6px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  outline: none;
+}
+.ui-confirm-btn.danger {
+  color: #c23b32;
+  border-color: rgba(194, 59, 50, 0.4);
+}
+html.dark .ui-confirm-btn.danger {
+  color: #eb5757;
+  border-color: rgba(235, 87, 87, 0.4);
+}
+.ui-confirm-btn:hover {
+  background: var(--hair);
+  color: var(--ink);
+}
+.ui-confirm-btn:focus-visible {
+  outline: 1px solid var(--mute);
+  outline-offset: 2px;
 }
