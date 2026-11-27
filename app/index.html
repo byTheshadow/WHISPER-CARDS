@@ -14,11 +14,25 @@
 <link rel="stylesheet" href="./css/gift-card.css">
 <link rel="stylesheet" href="./css/page-chat.css">
 <link rel="stylesheet" href="./css/page-starmap.css">
+<link rel="stylesheet" href="./css/rite.css">
 </head>
 <body>
 
 <canvas id="sky" aria-hidden="true"></canvas>
 <canvas id="aur" aria-hidden="true"></canvas>
+
+<!-- 拓印滤镜 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="rub" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="1" seed="9" result="g"/>
+      <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1.25 0 0 0 1.32" result="m"/>
+      <feComposite in="d" in2="m" operator="in"/>
+    </filter>
+  </defs>
+</svg>
 
 <div id="halo" aria-hidden="true">
   <div class="hl" id="hSky"></div>
@@ -55,6 +69,7 @@
           <button class="tbtn" id="btnStarmap" type="button" aria-label="查看星图与历史">星图</button>
           <i class="top-sep"></i>
           <span id="sessNo">No.----</span>
+          <span class="bond-bar" id="bondBar" hidden>· <b id="bondWho"></b></span>
         </div>
         <span class="sp"></span>
         <button class="tbtn" id="btnReveal" type="button" aria-label="按住显影" aria-pressed="false">显影</button>
@@ -233,14 +248,24 @@
 </div><input type="file" id="iFile" accept="image/*" multiple hidden>
 
 <div class="ov" id="ovAll" role="dialog" aria-modal="true" aria-labelledby="aTitle" hidden>
-  <div class="ovc">
+  <div class="ovc ovc-deck-stage">
     <div class="ov-top">
-      <span class="ov-ttl" id="aTitle">全部卡牌<small id="aDeck">· 字卡</small></span>
+      <span class="ov-ttl" id="aTitle">展字笺<small id="aDeck">· 字卡</small></span>
       <span class="ov-sp"></span>
-      <button class="ov-tbtn" id="aClose" type="button">关闭</button>
+      <button class="ov-tbtn" id="aClose" type="button">收起</button>
     </div>
-    <div class="cnt"><span id="aCnt">共 0 张</span><small>按导入顺序</small></div>
-    <div class="gw" id="aList"></div>
+    <div class="deck-all-wrap">
+      <div class="deck-tools-bar">
+        <div class="deck-filters" id="deckFilters">
+          <button class="on" data-f="all" type="button">全部</button>
+          <button data-f="word" type="button">字卡</button>
+          <button data-f="tarot" type="button">塔罗</button>
+          <button data-f="gift" type="button">礼物</button>
+        </div>
+        <div class="cnt"><span id="aCnt">共 0 张</span></div>
+      </div>
+      <div id="deckStageBody"></div>
+    </div>
   </div>
 </div>
 
@@ -272,6 +297,68 @@
   <button class="again" id="btnAgain" type="button">再点一支蜡烛</button>
 </div>
 
+<!-- 灵息连结仪式（静心叩问 + 调频测定） -->
+<div class="rite" id="rite" data-step="ask" role="dialog" aria-modal="true" aria-label="静心叩问">
+  <div class="rite-veil"></div>
+
+  <div class="step step-ask">
+    <div class="paper" id="paper">
+      <button class="p-close" id="riteClose" type="button" aria-label="暂且搁笔">×</button>
+      <span class="p-date" id="pDate"></span>
+      <div class="p-head">
+        <div class="seal">叩</div>
+        <div><h2>静心叩问</h2><p>闭目三息，将心意题于素笺</p></div>
+      </div>
+
+      <label class="field">
+        <span class="lab">心念所向</span>
+        <input id="fName" placeholder="你想联系谁？" maxlength="20" autocomplete="off">
+        <span class="line-ind"></span>
+        <div class="chips" id="chips">
+          <button type="button">外婆</button><button type="button">阿泽</button><button type="button">未来的自己</button><button type="button">那只小橘猫</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span class="lab">寄语一言</span>
+        <input id="fWord" placeholder="你那里下雪了吗？" maxlength="60" autocomplete="off">
+        <span class="line-ind"></span>
+      </label>
+
+      <div class="field fold" id="fold">
+        <button type="button" class="fold-btn" id="foldBtn" aria-expanded="false"><span class="pm">＋</span>溯念心印 <em>可略</em></button>
+        <div class="fold-body">
+          <textarea id="fNote" rows="3" maxlength="200" placeholder="只有你们知晓的事：某个午后、一句口头禅、一道菜的咸淡……"></textarea>
+        </div>
+      </div>
+
+      <div class="p-foot">
+        <span class="tip" id="tip">心意写下，频率自明</span>
+        <button class="btn-ink" id="igniteBtn" type="button">调频启讯</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step step-light">
+    <canvas id="flame"></canvas>
+    <button class="r-cancel" id="rCancel" type="button">收线暂止</button>
+    <div class="readout">
+      <p class="r-who">叩问 · <b id="rWho"></b></p>
+      <p class="r-pct">灵息共振 <span id="rPct">0</span>%</p>
+      <p class="r-state" id="rState">凝神 · 灵息初萌</p>
+      <div class="r-bar"><i id="rBar"></i></div>
+    </div>
+    <div class="dawn"></div>
+    <div class="done">
+      <svg class="d-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2 L13.4 10.6 L22 12 L13.4 13.4 L12 22 L10.6 13.4 L2 12 L10.6 10.6 Z"/></svg>
+      <p class="d0" id="dWho"></p>
+      <p class="d1">连结已成</p>
+      <p class="d2">灵息澄澈，可以开口了</p>
+      <button class="btn-ink" id="enterBtn" type="button">开启对话</button>
+    </div>
+  </div>
+</div>
+
 <noscript><p class="noscript">这个页面需要 JavaScript 才能运行。</p></noscript>
 
 <script src="./js/rng.js"></script>
@@ -287,6 +374,7 @@
 <script src="./js/ui.js"></script>
 <script src="./js/sfx.js"></script>
 <script src="./js/decks.js"></script>
+<script src="./js/rite.js"></script>
 <script src="./js/settings.js"></script>
 <script src="./js/starmap.js"></script>
 <script src="./js/app.js"></script>

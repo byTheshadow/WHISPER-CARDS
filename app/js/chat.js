@@ -39,7 +39,8 @@
     idleTimer: 0,           /* 静默倾听 / 纯随机问骰计时器 */
     proactiveStreak: 0,     /* 彼方连续主动传讯次数 */
     gazeTimer: 0,           /* 凝视水墨波纹持续定时器 */
-    gazing: false           /* 当前彼方是否正在凝视中 */
+    gazing: false,          /* 当前彼方是否正在凝视中 */
+    recipient: null         /* 当前会话连结的羁绊对象 { name, word, note } */
   };
 
   function el(tag, cls, text) { return O.ui.el(tag, cls, text); }
@@ -792,7 +793,8 @@
       startedAt: s.startedAt,
       endedAt: last ? last.at : s.startedAt,
       msgCount: s.history.length,
-      decks: deckNames()
+      decks: deckNames(),
+      recipient: s.recipient ? s.recipient.name : ''
     };
     var i;
     var found = false;
@@ -881,7 +883,8 @@
         startedAt: s.startedAt || at,
         endedAt: at,
         msgCount: s.history.length,
-        decks: deckNames()
+        decks: deckNames(),
+        recipient: s.recipient ? s.recipient.name : ''
       };
       s.sessions.push(row);
     } else {
@@ -890,6 +893,20 @@
       row.msgCount = s.history.length;
     }
     return O.db.saveSessions(s.sessions).then(function () { return true; }, function () { return false; });
+  }
+
+  function setRecipient(info) {
+    s.recipient = info || null;
+    var bar = doc.getElementById('bondBar');
+    var who = doc.getElementById('bondWho');
+    if (bar && who) {
+      if (s.recipient && s.recipient.name) {
+        who.textContent = s.recipient.name;
+        bar.hidden = false;
+      } else {
+        bar.hidden = true;
+      }
+    }
   }
 
   /* 清空全部数据之后用：库删了，内存里这份也必须扔，否则下一段落库会把它写回去。 */
@@ -912,6 +929,7 @@
     s.persistFail = false;
     s.no = no || '';
     s.startedAt = 0;
+    setRecipient(null);
     if (refs) {
       if (refs.hist) {
         while (refs.hist.firstChild) { refs.hist.removeChild(refs.hist.firstChild); }
@@ -1033,5 +1051,16 @@
   /* 只给验收用：把时间线压缩 n 倍播放 */
   function setSpeed(n) { s.speed = n > 0 ? n : 1; }
 
-  O.chat = { mount: mount, setSpeed: setSpeed, place: place, hand: hand, debug: debug, restore: restore, reset: reset, reveal: reveal, endSession: endSession };
+  O.chat = {
+    mount: mount,
+    setSpeed: setSpeed,
+    place: place,
+    hand: hand,
+    debug: debug,
+    restore: restore,
+    reset: reset,
+    reveal: reveal,
+    endSession: endSession,
+    setRecipient: setRecipient
+  };
 })(window);

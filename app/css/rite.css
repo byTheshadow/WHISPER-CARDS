@@ -1,0 +1,542 @@
+/* =====================================================================
+   显影 · 传讯字卡（WHISPER CARDS）—— 灵息连结仪式样式
+   包含：素笺叩问（纸张质感、印章、溯念心印折叠）
+        调频测定（暗室仪表、频率频谱、共振读数、破晓与同频）
+   基线兼容 Chrome 61（避免未降级的 gap/inset，使用规范 CSS 变量）
+   ===================================================================== */
+
+.rite {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.7s ease, visibility 0s 0.7s;
+}
+
+.rite.open {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.7s ease;
+}
+
+.rite-veil {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg);
+  opacity: 0.88;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .rite-veil {
+    background: var(--glow2);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+.step {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.1s ease;
+}
+
+.rite[data-step="ask"] .step-ask {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rite[data-step="light"] .step-light,
+.rite[data-step="dawn"] .step-light,
+.rite[data-step="done"] .step-light {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- 叩问素笺 ---------- */
+.paper {
+  position: relative;
+  width: 92%;
+  max-width: 470px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  padding: 38px 36px 30px;
+  box-shadow: 0 30px 80px var(--glow2);
+  transform: translateY(16px);
+  transition: transform 0.9s cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.rite.open[data-step="ask"] .paper {
+  transform: translateY(0);
+}
+
+.paper.shake {
+  animation: paperShake 0.45s ease;
+}
+
+@keyframes paperShake {
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.p-head {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.seal {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  margin-right: 14px;
+  color: var(--ink);
+}
+
+.p-head h2 {
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.38em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.p-head p {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--mute);
+  margin: 6px 0 0;
+}
+
+.p-date {
+  position: absolute;
+  right: 22px;
+  top: 56px;
+  writing-mode: vertical-rl;
+  font-size: 10px;
+  letter-spacing: 0.45em;
+  color: var(--mute);
+}
+
+.p-close {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  color: var(--mute);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.4s, transform 0.5s;
+}
+
+.p-close:hover {
+  color: var(--ink);
+  transform: rotate(90deg);
+}
+
+.field {
+  display: block;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.lab {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.28em;
+  color: var(--ink2);
+  margin-bottom: 4px;
+}
+
+.field input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--hair);
+  background: transparent;
+  outline: none;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  padding: 8px 0;
+  transition: border-color 0.4s;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--mute);
+  opacity: 0.75;
+}
+
+.field .line-ind {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.2, 0.75, 0.2, 1);
+  margin-top: -1px;
+}
+
+.field input:focus + .line-ind {
+  transform: scaleX(1);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.chips button {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+  padding: 3px 6px;
+  margin-right: 8px;
+  margin-bottom: 4px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+.chips button:hover {
+  color: var(--ink);
+  border-color: var(--mute);
+}
+
+.fold-btn {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  color: var(--ink2);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.fold-btn .pm {
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+  margin-right: 6px;
+  transition: transform 0.5s;
+}
+
+.fold.open .fold-btn .pm {
+  transform: rotate(45deg);
+}
+
+.fold-btn em {
+  font-style: normal;
+  color: var(--mute);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  margin-left: 8px;
+}
+
+.fold-body {
+  display: none;
+  margin-top: 10px;
+}
+
+.fold.open .fold-body {
+  display: block;
+}
+
+.fold textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  background: transparent;
+  outline: none;
+  resize: none;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  line-height: 1.8;
+  padding: 8px 12px;
+  color: var(--ink);
+  transition: border-color 0.4s;
+}
+
+.fold textarea:focus {
+  border-color: var(--ink2);
+}
+
+.p-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+}
+
+.tip {
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  color: var(--mute);
+  transition: color 0.4s;
+}
+
+.tip.warn {
+  color: #c23b32;
+}
+
+html.dark .tip.warn {
+  color: #ff6b6b;
+}
+
+.btn-ink {
+  background: var(--ink);
+  color: var(--bg);
+  border: 0;
+  border-radius: 3px;
+  padding: 10px 22px;
+  font-size: 13.5px;
+  letter-spacing: 0.36em;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.btn-ink:hover {
+  opacity: 0.92;
+  box-shadow: 0 4px 18px var(--glow);
+}
+
+.btn-ink:active {
+  transform: translateY(1px);
+}
+
+/* ---------- 调频与共振测定 ---------- */
+.step-light {
+  background: #060608;
+  color: #f1f1f3;
+  transition: opacity 1.3s ease, background-color 2s ease;
+}
+
+.rite[data-step="dawn"] .step-light,
+.rite[data-step="done"] .step-light {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#flame {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  transition: opacity 1.6s ease;
+}
+
+.rite[data-step="dawn"] #flame,
+.rite[data-step="done"] #flame {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.readout {
+  position: absolute;
+  left: 0; right: 0; bottom: 8vh;
+  text-align: center;
+  color: rgba(241, 241, 243, 0.88);
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+
+.rite[data-step="dawn"] .readout,
+.rite[data-step="done"] .readout {
+  opacity: 0;
+}
+
+.r-who {
+  font-size: 12px;
+  letter-spacing: 0.45em;
+  color: rgba(241, 241, 243, 0.5);
+  margin: 0 0 6px;
+}
+
+.r-who b {
+  font-weight: 400;
+  color: rgba(241, 241, 243, 0.9);
+}
+
+.r-pct {
+  font-size: 12px;
+  letter-spacing: 0.36em;
+  margin: 12px 0 6px;
+  color: rgba(241, 241, 243, 0.55);
+}
+
+.r-pct span {
+  font-size: 38px;
+  letter-spacing: 0.04em;
+  color: rgba(241, 241, 243, 0.92);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  min-width: 2.2ch;
+}
+
+.r-state {
+  font-size: 13.5px;
+  letter-spacing: 0.28em;
+  min-height: 1.8em;
+  margin: 0;
+  color: rgba(241, 241, 243, 0.78);
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+
+.r-state.fade {
+  opacity: 0;
+  filter: blur(4px);
+}
+
+.r-bar {
+  width: 160px;
+  height: 1px;
+  margin: 16px auto 0;
+  background: rgba(241, 241, 243, 0.16);
+}
+
+.r-bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: rgba(241, 241, 243, 0.85);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  transition: width 0.35s linear;
+}
+
+.r-cancel {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: rgba(241, 241, 243, 0.45);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: color 0.3s;
+}
+
+.r-cancel:hover {
+  color: rgba(241, 241, 243, 0.9);
+}
+
+.rite[data-step="dawn"] .r-cancel,
+.rite[data-step="done"] .r-cancel {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dawn {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 44vmax;
+  height: 44vmax;
+  margin: -22vmax 0 0 -22vmax;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(255, 250, 238, 0.95) 0%, rgba(255, 246, 228, 0.45) 30%, rgba(255, 246, 228, 0) 66%);
+}
+
+.rite[data-step="dawn"] .dawn {
+  animation: dawnBloom 2.6s cubic-bezier(0.25, 0.6, 0.25, 1) forwards;
+}
+
+@keyframes dawnBloom {
+  0% { transform: scale(0.06); opacity: 0; }
+  22% { opacity: 1; }
+  100% { transform: scale(5); opacity: 0; }
+}
+
+.done {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.2, 0.75, 0.2, 1);
+  pointer-events: none;
+  color: var(--ink);
+}
+
+.rite[data-step="done"] .done {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.d-star {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 18px;
+  color: var(--ink);
+}
+
+.d0 {
+  font-size: 12px;
+  letter-spacing: 0.38em;
+  color: var(--mute);
+  margin: 0;
+}
+
+.d1 {
+  font-size: 26px;
+  letter-spacing: 0.48em;
+  margin: 14px 0 10px;
+  padding-left: 0.48em;
+  color: var(--ink);
+}
+
+.d2 {
+  font-size: 13px;
+  letter-spacing: 0.26em;
+  color: var(--ink2);
+  margin-bottom: 28px;
+}
+
+/* 顶栏同频信息标牌 */
+.bond-bar {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.bond-bar b {
+  font-weight: 400;
+  color: var(--ink2);
+  margin-left: 4px;
+}

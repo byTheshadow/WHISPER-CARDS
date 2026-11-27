@@ -1761,6 +1761,9 @@
     refs.cno.textContent = curSess.no;
     refs.meta.textContent = formatDate(curSess.startedAt);
     refs.meta.appendChild(el('span', 'sc', shichenOf(curSess.startedAt)));
+    if (curSess.recipient) {
+      refs.meta.appendChild(el('span', 'sc', '与 ' + curSess.recipient));
+    }
     refs.msg.textContent = '共 ' + (curSess.msgCount || 0) + ' 段';
     var mins = curSess.endedAt ? Math.max(1, Math.round((curSess.endedAt - curSess.startedAt) / 60000)) : 0;
     refs.dur.textContent = mins ? '历时 ' + mins + ' 分' : '时长未知';

@@ -512,68 +512,407 @@
     });
   }
 
-  /* ---------- 全部卡牌 ---------- */
+  /* ---------- 展字笺（全景字卡台） ---------- */
 
-  function itemRow(deckKey, item) {
-    var row = el('div', 'ac');
-    if (item.kind === 'gift') {
-      var gico = el('span', 'ac__i gift');
-      gico.appendChild(O.giftIcons.make(item.gift));
-      row.appendChild(gico);
-      var gbody = el('span', 'ac__g');
-      gbody.appendChild(el('span', 'ac__gn', item.name || '无题'));
-      if (item.meaning) { gbody.appendChild(el('span', 'ac__p', item.meaning)); }
-      row.appendChild(gbody);
-      return row;
-    }
-    if (item.image) {
-      var im = doc.createElement('img');
-      im.className = 'ac__i';
-      im.src = item.image;
-      im.alt = '';
-      row.appendChild(im);
-    }
-    if (deckKey === 'tarot') {
-      row.appendChild(el('span', 'ac__n', item.num || '—'));
-      row.appendChild(el('span', 'ac__m', item.name || '无题'));
-      var mean = '正位 ' + (item.upright || '未填') + '　逆位 ' + (item.reversed || '未填');
-      row.appendChild(el('span', 'ac__p', mean));
-      return row;
-    }
-    if (item.text) {
-      row.appendChild(el('span', 'ac__t', item.text));
-    } else if (item.image) {
-      row.appendChild(el('span', 'ac__t', '（只有图）'));
-    }
-    return row;
+  var activeFilter = 'all';
+  var wSelIndex = -1;
+  var tarotSel = null;
+
+  function pad2(n) {
+    return n < 10 ? '0' + n : String(n);
   }
 
-  /* 2000 张也不能一次全塞进 DOM：按 300 一批补，覆盖层一关就停。 */
-  function renderAllItems(deckKey, items) {
-    var i = 0;
-    if (!items.length) {
-      els.aList.appendChild(el('p', 'emp', '这堆是空的。'));
-      return;
+  function getDeckItems(key) {
+    return (decks && decks[key] && decks[key].items) ? decks[key].items : [];
+  }
+
+  function renderWordSection(items) {
+    var sec = el('div', 'deck-sec');
+    sec.setAttribute('data-sec', 'word');
+    if (activeFilter !== 'all' && activeFilter !== 'word') { sec.hidden = true; }
+
+    var head = el('div', 'sec-head-bar');
+    var h3 = el('h3');
+    h3.appendChild(doc.createTextNode('字卡'));
+    h3.appendChild(el('em', '', 'Words'));
+    head.appendChild(h3);
+    head.appendChild(el('p', '', '点选一字，看它想说的话'));
+    sec.appendChild(head);
+
+    var wl = el('div', 'wl');
+    var stage = el('div', 'wl-stage');
+    stage.appendChild(el('span', 'wl-corner wl-c1'));
+    stage.appendChild(el('span', 'wl-corner wl-c2'));
+
+    var wlNo = el('span', 'wl-no', '01 / ' + pad2(Math.max(1, items.length)));
+    stage.appendChild(wlNo);
+
+    var wlIn = el('div', 'wl-in');
+    var wlChar = el('div', 'wl-char', (items[0] && items[0].text) || '—');
+    var wlRule = el('span', 'wl-rule');
+    var wlText = el('p', 'wl-text', (items[0] && items[0].text) ? '心念所至，字墨生辉。' : '此堆尚无字卡。');
+    wlIn.appendChild(wlChar);
+    wlIn.appendChild(wlRule);
+    wlIn.appendChild(wlText);
+    stage.appendChild(wlIn);
+    stage.appendChild(el('span', 'w-seal', '拓'));
+    wl.appendChild(stage);
+
+    var list = el('ul', 'wl-list');
+    var i;
+    for (i = 0; i < items.length; i++) {
+      (function (item, idx) {
+        var li = el('li', 'wl-item');
+        var btn = el('button', 'wl-row' + (idx === 0 ? ' on' : ''));
+        btn.type = 'button';
+        btn.appendChild(el('span', 'wn', pad2(idx + 1)));
+        btn.appendChild(el('span', 'wc', item.text || (item.image ? '图' : '—')));
+        btn.appendChild(el('span', 'wt', item.text ? ('字卡 · ' + item.text) : '自定义图卡'));
+        btn.addEventListener('click', function () {
+          var rows = list.querySelectorAll('.wl-row');
+          var k;
+          for (k = 0; k < rows.length; k++) { rows[k].classList.remove('on'); }
+          btn.classList.add('on');
+          wlIn.classList.add('swap');
+          win.setTimeout(function () {
+            wlNo.textContent = pad2(idx + 1) + ' / ' + pad2(items.length);
+            wlChar.textContent = item.text || '—';
+            wlText.textContent = item.text ? ('字卡 · 「' + item.text + '」已入牌序。') : '自定义图卡。';
+            wlIn.classList.remove('swap');
+          }, 240);
+        });
+        li.appendChild(btn);
+        list.appendChild(li);
+      })(items[i], i);
     }
-    function step() {
-      if (els.ovAll.hidden) { return; }
-      var chunk = doc.createDocumentFragment();
-      var end = Math.min(items.length, i + 300);
-      for (; i < end; i++) { chunk.appendChild(itemRow(deckKey, items[i])); }
-      els.aList.appendChild(chunk);
-      if (i < items.length) { win.setTimeout(step, 0); }
+    wl.appendChild(list);
+    sec.appendChild(wl);
+    return sec;
+  }
+
+  function renderTarotSection(items) {
+    var sec = el('div', 'deck-sec');
+    sec.setAttribute('data-sec', 'tarot');
+    if (activeFilter !== 'all' && activeFilter !== 'tarot') { sec.hidden = true; }
+
+    var head = el('div', 'sec-head-bar');
+    var h3 = el('h3');
+    h3.appendChild(doc.createTextNode('塔罗'));
+    h3.appendChild(el('em', '', 'Arcana'));
+    head.appendChild(h3);
+    head.appendChild(el('p', '', '牌从袋中摆好 · 点选即可修改牌意与翻转'));
+    sec.appendChild(head);
+
+    var stage = el('div', 'tr-stage');
+
+    /* 塔罗牌袋 */
+    var pouchWrap = el('div', 'pouch-wrap');
+    var pouch = el('div', 'pouch');
+    pouch.innerHTML = '<svg viewBox="0 0 220 260" aria-hidden="true">' +
+      '<ellipse class="pk-in" cx="110" cy="80" rx="54" ry="13"/>' +
+      '<path class="pk-line" d="M56 80 C 72 65, 148 65, 164 80"/>' +
+      '<path class="pk-body" d="M56 80 C 38 112, 20 168, 38 214 C 54 250, 166 250, 182 214 C 200 168, 182 112, 164 80 C 146 95, 74 95, 56 80 Z"/>' +
+      '<path class="pk-stitch" d="M60 97 C 82 110, 138 110, 160 97"/>' +
+      '<text class="pk-txt" x="110" y="195" text-anchor="middle">ARCANA</text>' +
+      '</svg>';
+    pouchWrap.appendChild(pouch);
+
+    var pouchAct = el('div', 'pouch-act');
+    var pouchN = el('p', 'pouch-n', '已摆出 ' + items.length + ' 张');
+    pouchAct.appendChild(pouchN);
+
+    var addBtn = el('button', 'btn-quiet', '＋ 添一张新牌');
+    addBtn.type = 'button';
+    addBtn.addEventListener('click', function () {
+      var fresh = { num: String(items.length), name: '新牌', upright: '心意明朗', reversed: '稍安勿躁' };
+      items.push(fresh);
+      saveCurrentDecks('已添加一张新塔罗');
+    });
+    pouchAct.appendChild(addBtn);
+    pouchWrap.appendChild(pouchAct);
+    stage.appendChild(pouchWrap);
+
+    /* 牌阵展示 */
+    var gridBox = el('div', 'tgrid-box');
+    var i;
+    for (i = 0; i < items.length; i++) {
+      (function (item, idx) {
+        var wrap = el('div', 'tslot-wrap');
+        var card = el('div', 'tc-card');
+        var inner = el('div', 'tc-inner');
+        inner.appendChild(el('span', 'tc-num', item.num || pad2(idx + 1)));
+
+        var glyph = el('div', 'tc-glyph');
+        glyph.innerHTML = '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="12"/><path d="M24 6v6M24 36v6M6 24h6M36 24h6"/></svg>';
+        inner.appendChild(glyph);
+
+        inner.appendChild(el('span', 'tc-name', item.name || '无题'));
+        inner.appendChild(el('span', 'tc-pos', '正位'));
+        card.appendChild(inner);
+
+        var meanBox = el('div', 'tc-mean-box');
+        meanBox.appendChild(el('p', 'tc-mean-text', item.upright || '心意澄澈，水到渠成。'));
+        card.appendChild(meanBox);
+
+        card.addEventListener('click', function () {
+          var allCards = gridBox.querySelectorAll('.tc-card');
+          var m;
+          for (m = 0; m < allCards.length; m++) { allCards[m].classList.remove('sel'); }
+          card.classList.add('sel');
+          selectTarot(item, idx, card);
+        });
+
+        wrap.appendChild(card);
+        gridBox.appendChild(wrap);
+      })(items[i], i);
     }
-    step();
+    stage.appendChild(gridBox);
+
+    /* 侧边编辑面板 */
+    var aside = el('aside', 'ed-aside');
+    var emptyHint = el('p', 'emp', '点选一张牌，在这里修改名字、牌意或翻转');
+    aside.appendChild(emptyHint);
+
+    var edBody = el('div', 'ed-body');
+    edBody.hidden = true;
+
+    var edTop = el('div', 'ed-top-bar');
+    var edTitle = el('h4', '', '第 01 张');
+    var edClose = el('button', 'ed-close', '×');
+    edClose.type = 'button';
+    edClose.addEventListener('click', function () {
+      edBody.hidden = true;
+      emptyHint.hidden = false;
+      var allCards = gridBox.querySelectorAll('.tc-card');
+      var m;
+      for (m = 0; m < allCards.length; m++) { allCards[m].classList.remove('sel'); }
+    });
+    edTop.appendChild(edTitle);
+    edTop.appendChild(edClose);
+    edBody.appendChild(edTop);
+
+    var edNumF = el('div', 'ed-field');
+    edNumF.appendChild(el('label', '', '编号'));
+    var edNumIn = el('input');
+    edNumF.appendChild(edNumIn);
+    edBody.appendChild(edNumF);
+
+    var edNameF = el('div', 'ed-field');
+    edNameF.appendChild(el('label', '', '牌名'));
+    var edNameIn = el('input');
+    edNameF.appendChild(edNameIn);
+    edBody.appendChild(edNameF);
+
+    var edOrientF = el('div', 'ed-field');
+    edOrientF.appendChild(el('span', 'ed-lbl', '朝向'));
+    var segBox = el('div', 'seg-orient');
+    var btnUp = el('button', 'on', '正位');
+    var btnDown = el('button', '', '逆位');
+    btnUp.type = 'button';
+    btnDown.type = 'button';
+    segBox.appendChild(btnUp);
+    segBox.appendChild(btnDown);
+    edOrientF.appendChild(segBox);
+    edBody.appendChild(edOrientF);
+
+    var edUpF = el('div', 'ed-field');
+    edUpF.appendChild(el('label', '', '正位牌意'));
+    var edUpTa = el('textarea');
+    edUpTa.rows = 2;
+    edUpF.appendChild(edUpTa);
+    edBody.appendChild(edUpF);
+
+    var edDownF = el('div', 'ed-field');
+    edDownF.appendChild(el('label', '', '逆位牌意'));
+    var edDownTa = el('textarea');
+    edDownTa.rows = 2;
+    edDownF.appendChild(edDownTa);
+    edBody.appendChild(edDownF);
+
+    var actBox = el('div', 'ed-actions');
+    var btnFlip = el('button', 'btn-quiet', '翻看牌意');
+    btnFlip.type = 'button';
+    var btnDel = el('button', 'btn-quiet danger', '删除这张');
+    btnDel.type = 'button';
+    actBox.appendChild(btnFlip);
+    actBox.appendChild(btnDel);
+    edBody.appendChild(actBox);
+
+    aside.appendChild(edBody);
+    stage.appendChild(aside);
+    sec.appendChild(stage);
+
+    function selectTarot(item, idx, cardElm) {
+      emptyHint.hidden = true;
+      edBody.hidden = false;
+      edTitle.textContent = '第 ' + pad2(idx + 1) + ' 张';
+      edNumIn.value = item.num || '';
+      edNameIn.value = item.name || '';
+      edUpTa.value = item.upright || '';
+      edDownTa.value = item.reversed || '';
+
+      edNumIn.oninput = function () {
+        item.num = edNumIn.value;
+        cardElm.querySelector('.tc-num').textContent = item.num || '·';
+        saveDecksDebounced();
+      };
+      edNameIn.oninput = function () {
+        item.name = edNameIn.value;
+        cardElm.querySelector('.tc-name').textContent = item.name || '无题';
+        saveDecksDebounced();
+      };
+      edUpTa.oninput = function () {
+        item.upright = edUpTa.value;
+        cardElm.querySelector('.tc-mean-text').textContent = (cardElm.classList.contains('rev') ? item.reversed : item.upright) || '（未填）';
+        saveDecksDebounced();
+      };
+      edDownTa.oninput = function () {
+        item.reversed = edDownTa.value;
+        cardElm.querySelector('.tc-mean-text').textContent = (cardElm.classList.contains('rev') ? item.reversed : item.upright) || '（未填）';
+        saveDecksDebounced();
+      };
+
+      btnUp.onclick = function () {
+        btnUp.classList.add('on');
+        btnDown.classList.remove('on');
+        cardElm.classList.remove('rev');
+        cardElm.querySelector('.tc-pos').textContent = '正位';
+        cardElm.querySelector('.tc-mean-text').textContent = item.upright || '（未填）';
+      };
+      btnDown.onclick = function () {
+        btnDown.classList.add('on');
+        btnUp.classList.remove('on');
+        cardElm.classList.add('rev');
+        cardElm.querySelector('.tc-pos').textContent = '逆位';
+        cardElm.querySelector('.tc-mean-text').textContent = item.reversed || '（未填）';
+      };
+
+      btnFlip.onclick = function () {
+        cardElm.classList.toggle('mean');
+      };
+
+      btnDel.onclick = function () {
+        items.splice(idx, 1);
+        saveCurrentDecks('已移除该塔罗牌');
+      };
+    }
+
+    return sec;
+  }
+
+  function renderGiftSection(items) {
+    var sec = el('div', 'deck-sec');
+    sec.setAttribute('data-sec', 'gift');
+    if (activeFilter !== 'all' && activeFilter !== 'gift') { sec.hidden = true; }
+
+    var head = el('div', 'sec-head-bar');
+    var h3 = el('h3');
+    h3.appendChild(doc.createTextNode('礼物'));
+    h3.appendChild(el('em', '', 'Gifts'));
+    head.appendChild(h3);
+    head.appendChild(el('p', '', '轻触一枚，翻看赠言与心意'));
+    sec.appendChild(head);
+
+    var plate = el('div', 'sheet-plate');
+    plate.appendChild(el('div', 'sweep-light'));
+
+    var grid = el('div', 'gift-cards-grid');
+    var i;
+    for (i = 0; i < items.length; i++) {
+      (function (item) {
+        var cell = el('div', 'gift-card-cell');
+        var card = el('div', 'gift-item');
+
+        var inner = el('div', 'gift-inner');
+        inner.appendChild(el('span', 'g-seal', '礼'));
+
+        var ico = el('span', 'g-ico');
+        ico.appendChild(O.giftIcons.make(item.gift || 'bouquet'));
+        inner.appendChild(ico);
+
+        inner.appendChild(el('span', 'gn', item.name || '赠礼'));
+        inner.appendChild(el('span', 'gs', '礼 · 寄春'));
+        card.appendChild(inner);
+
+        var back = el('div', 'gift-back');
+        back.appendChild(el('p', 'gb-text', item.meaning || '替你点在窗边，归来不必摸黑。'));
+        back.appendChild(el('span', 'gb-name', item.name || '赠礼'));
+        card.appendChild(back);
+
+        card.addEventListener('click', function () {
+          card.classList.toggle('turned');
+        });
+
+        cell.appendChild(card);
+        grid.appendChild(cell);
+      })(items[i]);
+    }
+    plate.appendChild(grid);
+    sec.appendChild(plate);
+    return sec;
+  }
+
+  var saveTimer = 0;
+  function saveDecksDebounced() {
+    if (saveTimer) { win.clearTimeout(saveTimer); }
+    saveTimer = win.setTimeout(function () {
+      O.db.saveDecks(decks);
+    }, 600);
+  }
+
+  function saveCurrentDecks(msg) {
+    mutateSeq += 1;
+    O.db.saveDecks(decks).then(function () {
+      render();
+      openAll(activeFilter);
+    });
+  }
+
+  function renderStage(container) {
+    container.textContent = '';
+    var wordItems = getDeckItems('word');
+    var tarotItems = getDeckItems('tarot');
+    var giftItems = [];
+    var specItems = getDeckItems('special');
+    var i;
+    for (i = 0; i < specItems.length; i++) {
+      if (specItems[i].kind === 'gift') { giftItems.push(specItems[i]); }
+    }
+    if (giftItems.length === 0) {
+      /* 如果特殊卡里没有礼物，自动装配几个默认精美礼物方便把玩 */
+      giftItems = [
+        { kind: 'gift', gift: 'bouquet', name: '一束花', meaning: '从这边的春天剪下的，不知你那边几月。' },
+        { kind: 'gift', gift: 'lamp', name: '一盏灯', meaning: '替你点在窗边，回来时不必摸黑。' },
+        { kind: 'gift', gift: 'letter', name: '一封信', meaning: '写了很多，最后只留下一句：想你。' },
+        { kind: 'gift', gift: 'umbrella', name: '一把伞', meaning: '若下雨，就撑这一把。' }
+      ];
+    }
+
+    container.appendChild(renderWordSection(wordItems));
+    container.appendChild(renderTarotSection(tarotItems));
+    container.appendChild(renderGiftSection(giftItems));
   }
 
   function openAll(deckKey) {
-    if (!decks || !decks[deckKey]) { return; }
-    var deck = decks[deckKey];
-    els.aDeck.textContent = '· ' + ((deck && deck.name) || LABEL[deckKey] || '牌堆');
-    els.aCnt.textContent = '共 ' + count(deck) + ' 张';
-    els.aList.textContent = '';
+    if (!decks) { return; }
+    activeFilter = (deckKey === 'special' ? 'gift' : deckKey) || 'all';
+
+    var fltBtns = els.deckFilters ? els.deckFilters.querySelectorAll('button') : [];
+    var b;
+    for (b = 0; b < fltBtns.length; b++) {
+      fltBtns[b].classList.toggle('on', fltBtns[b].getAttribute('data-f') === activeFilter);
+    }
+
+    var totalCnt = count(decks.word) + count(decks.tarot) + count(decks.special);
+    if (els.aCnt) { els.aCnt.textContent = '共 ' + totalCnt + ' 枚'; }
+    if (els.aDeck) {
+      els.aDeck.textContent = '· ' + (activeFilter === 'all' ? '全部' : (LABEL[activeFilter] || activeFilter));
+    }
+
+    if (els.deckStageBody) {
+      renderStage(els.deckStageBody);
+    }
     O.ui.openOv(els.ovAll, els.aClose);
-    renderAllItems(deckKey, (deck.items || []).slice(0));
   }
 
   /* ---------- 选图 ---------- */
@@ -862,6 +1201,26 @@
 
     els.aClose.addEventListener('click', function () { O.ui.closeOv(els.ovAll); });
     O.ui.bindEsc(els.ovAll, function () { O.ui.closeOv(els.ovAll); });
+
+    if (els.deckFilters) {
+      els.deckFilters.addEventListener('click', function (e) {
+        var btn = e.target;
+        if (!btn || btn.tagName !== 'BUTTON') { return; }
+        var f = btn.getAttribute('data-f');
+        if (!f) { return; }
+        var fltBtns = els.deckFilters.querySelectorAll('button');
+        var b;
+        for (b = 0; b < fltBtns.length; b++) { fltBtns[b].classList.remove('on'); }
+        btn.classList.add('on');
+        activeFilter = f;
+        var secs = els.deckStageBody ? els.deckStageBody.querySelectorAll('.deck-sec') : [];
+        var s;
+        for (s = 0; s < secs.length; s++) {
+          var secF = secs[s].getAttribute('data-sec');
+          secs[s].hidden = !(activeFilter === 'all' || activeFilter === secF);
+        }
+      });
+    }
   }
 
   function mount(refs) {

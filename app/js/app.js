@@ -270,7 +270,25 @@
 
   function relight() {
     awayBusy = false;
-    showOpen();
+    ritualEl.classList.add('hide');
+    ritualEl.classList.add('gone2');
+    if (O.rite) {
+      O.rite.open(function (info) {
+        O.chat.setRecipient(info);
+        showOpen();
+        if (info.word) {
+          later(function () {
+            var say = $('say');
+            if (say) {
+              say.value = info.word;
+              O.chat.place();
+            }
+          }, 400);
+        }
+      });
+    } else {
+      showOpen();
+    }
   }
 
   function bind() {
@@ -371,7 +389,8 @@
       ovAll: $('ovAll'),
       aDeck: $('aDeck'),
       aCnt: $('aCnt'),
-      aList: $('aList'),
+      deckStageBody: $('deckStageBody'),
+      deckFilters: $('deckFilters'),
       aClose: $('aClose'),
       ovGift: $('ovGift'),
       gGrid: $('gGrid'),
@@ -403,8 +422,12 @@
   }
 
   if (doc.readyState === 'loading') {
-    doc.addEventListener('DOMContentLoaded', boot);
+    doc.addEventListener('DOMContentLoaded', function () {
+      boot();
+      if (O.rite) { O.rite.mount(); }
+    });
   } else {
     boot();
+    if (O.rite) { O.rite.mount(); }
   }
 })(window);
