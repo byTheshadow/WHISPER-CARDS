@@ -35,7 +35,11 @@
     queued: [],             /* 恢复期间先排队的段落，等旧段落摆完再接 */
     restoring: false,
     gen: 0,                 /* 换了会话（清空全部数据）就 +1，进行中的恢复作废 */
-    persistFail: false
+    persistFail: false,
+    idleTimer: 0,           /* 静默倾听 / 纯随机问骰计时器 */
+    proactiveStreak: 0,     /* 彼方连续主动传讯次数 */
+    gazeTimer: 0,           /* 凝视水墨波纹持续定时器 */
+    gazing: false           /* 当前彼方是否正在凝视中 */
   };
 
   function el(tag, cls, text) { return O.ui.el(tag, cls, text); }
@@ -225,6 +229,43 @@
       doc.documentElement.classList.contains('rm');
   }
 
+  /* ---------- 凝视感知（代表彼方正在偶发注视着你） ---------- */
+
+  function stopGaze() {
+    s.gazing = false;
+    if (s.gazeTimer) {
+      win.clearTimeout(s.gazeTimer);
+      s.gazeTimer = 0;
+    }
+    if (refs && refs.gazeRipples) {
+      refs.gazeRipples.classList.remove('active');
+    }
+  }
+
+  function triggerGaze(durationMs) {
+    if (!refs || !refs.gazeRipples || doc.hidden) { return; }
+    s.gazing = true;
+    refs.gazeRipples.classList.add('active');
+    if (s.gazeTimer) { win.clearTimeout(s.gazeTimer); }
+    var dur = durationMs || (O.rng && O.rng.range ? O.rng.range(6000, 9500) : 7500);
+    s.gazeTimer = win.setTimeout(function () {
+      s.gazing = false;
+      if (refs && refs.gazeRipples) {
+        refs.gazeRipples.classList.remove('active');
+      }
+    }, dur);
+  }
+
+  function rollGazeOnFocus() {
+    /* 纯随机自然掷骰（不加人为控制概率）：
+       投掷自然随机骰，完全凭机缘感知彼方投来的凝视 */
+    if (O.rng && O.rng.int && O.rng.int(1, 4) === 1) {
+      triggerGaze();
+    } else {
+      stopGaze();
+    }
+  }
+
   /* ---------- 我的书写：板面镜像 ---------- */
 
   function clearLine() {
@@ -250,13 +291,6 @@
       return;
     }
     if (refs.draft) { refs.draft.hidden = true; refs.draft.textContent = ''; }
-    if (refs.gazeRipples) {
-      if (refs.say.value.length > 0 && s.focused) {
-        refs.gazeRipples.classList.add('active');
-      } else {
-        refs.gazeRipples.classList.remove('active');
-      }
-    }
     clearLine();
     refs.line.className = 'line me';
     var chars = Array.prototype.slice.call(refs.say.value);
@@ -327,13 +361,7 @@
       refs.say.value = '';
       s.prev = [];
       if (refs.draft) { refs.draft.hidden = true; refs.draft.textContent = ''; }
-    if (refs.gazeRipples) {
-      if (refs.say.value.length > 0 && s.focused) {
-        refs.gazeRipples.classList.add('active');
-      } else {
-        refs.gazeRipples.classList.remove('active');
-      }
-    }
+      stopGaze();
       renderMe();
     };
     if (s.restoring) {
@@ -346,6 +374,8 @@
       persist();
     }
     s.pending += 1;
+    cancelIdleProactive();
+    s.proactiveStreak = 0;
     setButtons();
   }
 
@@ -354,24 +384,132 @@
     if (refs.say.value.replace(/^\s+|\s+$/g, '').length) { place(); }
     if (s.pending === 0) { return; }
     s.pending = 0;
-    startRound();
+    cancelIdleProactive();
+    s.proactiveStreak = 0;
+    startRound(false);
   }
 
-  /* ---------- 对方的一轮 ---------- */
+  /* ---------- 对方的一轮与静默主动传讯（问骰 + 拼接字卡） ---------- */
+
+  function cancelIdleProactive() {
+    if (s.idleTimer) {
+      win.clearTimeout(s.idleTimer);
+      s.idleTimer = 0;
+    }
+  }
+
+  function scheduleIdleProactive() {
+    cancelIdleProactive();
+    if (s.running || s.restoring || s.pending > 0 || doc.hidden) { return; }
+
+    /* 纯随机脉动周期：每次自然间隔后，系统掷骰叩问 */
+    var cycleMs = O.rng && O.rng.range ? Math.round(O.rng.range(15000, 30000)) : 20000;
+
+    s.idleTimer = win.setTimeout(function () {
+      if (s.running || s.restoring || s.pending > 0 || doc.hidden) { return; }
+
+      var isFirst = s.history.length === 0;
+
+      /* 纯随机自然掷骰（不加人为控制概率）：
+         完全凭自然机缘决定彼方此刻是否有话想说 */
+      var willing = false;
+      if (O.rng && O.rng.int) {
+        willing = isFirst ? (O.rng.int(1, 2) === 1) : (O.rng.int(1, 3) === 1);
+      }
+
+      /* 连续主动发言最多 2 次，避免无休止自说自话 */
+      if (!isFirst && (s.proactiveStreak || 0) >= 2) {
+        willing = false;
+      }
+
+      if (willing) {
+        /* 摇骰得缘：彼方有话想说，正式进入 1~2 分钟拼接字卡阶段 */
+        beginPickingCards();
+      } else {
+        /* 未成缘：彼方继续沉静倾听，开启下一轮心念周期 */
+        scheduleIdleProactive();
+      }
+    }, cycleMs);
+  }
+
+  /* 拼接字卡阶段：真正给 1~2 分钟让对方在后台有时间去拼接字卡；
+     如果在这期间没有成功拼接出字卡，则不发出信息 */
+  function beginPickingCards() {
+    if (s.running) { return; }
+    cancelIdleProactive();
+    s.proactiveStreak = (s.proactiveStreak || 0) + 1;
+    s.locked = true;
+    s.mode = 'wait';
+    clearLine();
+    refs.line.className = 'line wait';
+
+    var sense = el('div', 'ch-sensing');
+    sense.appendChild(el('span', 'cs-orb'));
+    sense.appendChild(el('span', 'cs-text', '对方正在拼接字卡…'));
+    refs.line.appendChild(sense);
+
+    /* 若用户输入框里已有未放上板的草稿，转到底部 myDraft 显影保留，绝不丢失 */
+    if (refs.draft) {
+      var dv = refs.say.value;
+      if (dv.length > 0) {
+        refs.draft.hidden = false;
+        refs.draft.textContent = dv;
+      } else {
+        refs.draft.hidden = true;
+        refs.draft.textContent = '';
+      }
+    }
+    setButtons();
+
+    /* 对方主动发信息：真正给 1~2 分钟让对方在后台有时间去拼接字卡；
+       如果在这期间没有成功拼接出字卡，则不发出信息 */
+    var plan = O.engine.plan({
+      win: [1, 2],
+      sil: 0,
+      cards: (O.storage.prefs ? O.storage.prefs().cards : [1, 4]),
+      probs: (O.storage.prefs ? O.storage.prefs().probs : {}),
+      decks: deckSnapshot(),
+      proactive: true
+    });
+
+    if (hooks && hooks.light) { hooks.light(); }
+    s.plan = plan;
+    s.index = 0;
+    s.startAt = Date.now();
+    s.running = true;
+    tick();
+  }
 
   function deckSnapshot() {
     return O.decks && O.decks.snapshot ? O.decks.snapshot() : { word: { items: [] }, special: { items: [] }, tarot: { items: [] } };
   }
 
-  function startRound() {
-    var p = O.storage.prefs();
+  function startPlanAndRun() {
+    var p = O.storage.prefs ? O.storage.prefs() : {};
     var plan = O.engine.plan({
       win: p.win,
       sil: p.sil,
       cards: p.cards,
       probs: p.probs,
-      decks: deckSnapshot()
+      decks: deckSnapshot(),
+      proactive: false
     });
+    if (hooks && hooks.light) { hooks.light(); }
+    s.plan = plan;
+    s.index = 0;
+    s.startAt = Date.now();
+    s.running = true;
+    tick();
+  }
+
+  function startRound(proactive) {
+    if (s.running) { return; }
+    cancelIdleProactive();
+    if (proactive) {
+      beginPickingCards();
+      return;
+    }
+    s.proactiveStreak = 0;
     s.locked = true;
     s.mode = 'wait';
     clearLine();
@@ -381,12 +519,7 @@
     sense.appendChild(el('span', 'cs-text', '对方正在感知…'));
     refs.line.appendChild(sense);
     setButtons();
-    if (hooks && hooks.light) { hooks.light(); }
-    s.plan = plan;
-    s.index = 0;
-    s.startAt = Date.now();
-    s.running = true;
-    tick();
+    startPlanAndRun();
   }
 
   function tick() {
@@ -555,6 +688,7 @@
     refs.line.className = 'line';
     renderMe();
     setButtons();
+    scheduleIdleProactive();
   }
 
   function exec(ev) {
@@ -596,6 +730,14 @@
           (function (c, k) { later(function () { pushCard(c); }, k * 320); })(list[i], i);
         }
         later(commitThem, list.length * 320 + 700);
+        break;
+      case 'silence':
+        /* 1~2 分钟内未成功拼接出字卡：不发出任何信息，静默归隐 */
+        playSfx('silence');
+        later(function () {
+          clearLine();
+          endRound();
+        }, 500);
         break;
       case 'extinguish':
         playSfx('silence');
@@ -717,6 +859,7 @@
       applyFade();
       setButtons();
       if (q.length) { persist(); }
+      scheduleIdleProactive();
       return ok;
     });
   }
@@ -751,6 +894,9 @@
 
   /* 清空全部数据之后用：库删了，内存里这份也必须扔，否则下一段落库会把它写回去。 */
   function reset(no) {
+    stopGaze();
+    cancelIdleProactive();
+    s.proactiveStreak = 0;
     if (s.timer) { win.clearTimeout(s.timer); }
     s.gen += 1;
     s.running = false;
@@ -775,6 +921,7 @@
       refs.line.className = 'line';
       renderMe();
       setButtons();
+      scheduleIdleProactive();
     }
     return true;
   }
@@ -819,16 +966,12 @@
     refs.say.addEventListener('focus', function () {
       s.focused = true;
       renderMe();
-      if (refs.gazeRipples && refs.say.value.length > 0) {
-        refs.gazeRipples.classList.add('active');
-      }
+      rollGazeOnFocus();
     });
     refs.say.addEventListener('blur', function () {
       s.focused = false;
       renderMe();
-      if (refs.gazeRipples) {
-        refs.gazeRipples.classList.remove('active');
-      }
+      stopGaze();
     });
     refs.say.addEventListener('input', function () { renderMe(); setButtons(); });
     refs.say.addEventListener('keydown', function (e) {
@@ -846,14 +989,20 @@
     doc.addEventListener('visibilitychange', function () {
       if (doc.hidden) {
         reveal(false);
+        stopGaze();
+        cancelIdleProactive();
         if (s.running) {
           win.clearTimeout(s.timer);
           s.pausedAt = Date.now();
         }
-      } else if (s.running && s.pausedAt) {
-        s.startAt += Date.now() - s.pausedAt;
-        s.pausedAt = 0;
-        tick();
+      } else {
+        if (s.running && s.pausedAt) {
+          s.startAt += Date.now() - s.pausedAt;
+          s.pausedAt = 0;
+          tick();
+        } else if (!s.running && s.pending === 0) {
+          scheduleIdleProactive();
+        }
       }
     });
     renderMe();

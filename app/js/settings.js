@@ -17,7 +17,7 @@
   var SPEED = [{ v: '1', t: '慢' }, { v: '2', t: '中' }, { v: '3', t: '快' }];
   var THEME = [{ v: 'light', t: '浅' }, { v: 'dark', t: '深' }, { v: 'system', t: '跟随系统' }];
   var BG_THEMES = [
-    { v: 'A', t: '孤烛通灵' },
+    { v: 'A', t: '孤烛长明' },
     { v: 'C', t: '秘仪神殿' },
     { v: 'D', t: '静烛' }
   ];

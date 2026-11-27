@@ -170,18 +170,28 @@
     }
 
     if (!sent) {
-      var payload = [];
-      if (open === 0) {
-        var n = rng().int(cards[0], cards[1]);
-        var i;
-        var extra;
-        for (i = 0; i < n; i++) {
-          extra = draw(pool);
-          if (extra) { payload.push(extra); stats.drops += 1; }
+      if (o.proactive) {
+        /* 对方主动发信息：1~2 分钟未成功拼接出字卡，不强行发卡，归于沉静 */
+        if (open > 0) {
+          events.push({ t: Math.min(duration - 400, Math.round(limit + 400)), type: 'clear' });
         }
+        events.push({ t: duration, type: 'silence' });
+        stats.forced = false;
+      } else {
+        /* 用户主动发信息：严格走原有设置规则（草稿原样发出，草稿为空随机拼，走 force） */
+        var payload = [];
+        if (open === 0) {
+          var n = rng().int(cards[0], cards[1]);
+          var i;
+          var extra;
+          for (i = 0; i < n; i++) {
+            extra = draw(pool);
+            if (extra) { payload.push(extra); stats.drops += 1; }
+          }
+        }
+        events.push({ t: duration, type: 'force', cards: payload });
+        stats.forced = true;
       }
-      events.push({ t: duration, type: 'force', cards: payload });
-      stats.forced = true;
     }
 
     events.sort(function (x, y) { return x.t - y.t; });
