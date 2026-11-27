@@ -1789,6 +1789,11 @@
   function renderEvents(list) {
     var box = refs.sessHist, i, j;
     box.textContent = '';
+    if (!list || list.length === 0) {
+      var emp = el('div', 'ev-empty', '暂无记录');
+      box.appendChild(emp);
+      return;
+    }
     for (i = 0; i < list.length; i++) {
       var ev = list[i];
       var seg = el('div', 'ev' + (ev.who === 'me' ? ' me' : ''));
@@ -1803,6 +1808,14 @@
             if (c.num) { t.appendChild(el('span', 'tn', c.num)); }
             t.appendChild(el('span', 'nm', c.name || ''));
             t.appendChild(el('span', 'kw', (c.side === 'reversed' ? '逆位 ' + c.reversed : c.upright)));
+          } else if (c.kind === 'gift') {
+            t = el('div', 'tile tg');
+            if (O.giftIcons && c.gift) {
+              var gico = el('span', 'gf-ico');
+              gico.appendChild(O.giftIcons.make(c.gift));
+              t.appendChild(gico);
+            }
+            t.appendChild(el('span', 'nm', c.name || '礼物'));
           } else if (c.image) {
             t = el('div', 'tile');
             var img = doc.createElement('img'); img.src = c.image; img.alt = c.text || '';
@@ -1825,7 +1838,11 @@
     refs.sessHist.textContent = '';
     if (O.ui && O.ui.openOv) { O.ui.openOv(refs.ovSession, refs.sessClose); }
     stopLoop();
-    return O.db.loadEvents(curSess.no).then(function (list) { events = list || []; });
+    events = [];
+    return O.db.loadEvents(curSess.no).then(function (list) {
+      events = list || [];
+      return events;
+    });
   }
 
   function closeOverlay() {
@@ -1838,15 +1855,20 @@
 
   function openView() {
     if (!curSess) { return; }
-    openOverlay('No.' + curSess.no + '　全篇', false).then(function () { renderEvents(events); });
+    openOverlay('No.' + curSess.no + '　全篇', false).then(function (list) {
+      renderEvents(list || events);
+    });
   }
 
   function openReplay() {
     if (!curSess) { return; }
-    openOverlay('No.' + curSess.no + '　回放', true).then(function () {
-      replay.idx = 0; replay.running = true;
+    openOverlay('No.' + curSess.no + '　回放', true).then(function (list) {
+      events = list || events || [];
+      replay.idx = 0;
+      replay.running = true;
       refs.playBtn.textContent = '暂停';
-      renderProgress(); tickReplay();
+      renderProgress();
+      tickReplay();
     });
   }
 
@@ -1857,7 +1879,11 @@
     if (!ok) { return; }
     O.db.deleteSession(no).then(function () {
       closeCard();
-      open();
+      open().then(function () {
+        if (sessions.length === 0) {
+          setEmptyUI(true);
+        }
+      });
     });
   }
 

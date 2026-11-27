@@ -806,18 +806,26 @@ html.dark .ui-confirm-btn.danger {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s ease;
+}
+
+.tslot-wrap.active-wrap {
+  width: 50%;
 }
 
 @media (max-width: 860px) {
   .tslot-wrap { width: 33.333%; }
+  .tslot-wrap.active-wrap { width: 66.666%; }
 }
 
 @media (max-width: 600px) {
   .tslot-wrap { width: 50%; }
+  .tslot-wrap.active-wrap { width: 100%; }
 }
 
 @media (max-width: 400px) {
   .tslot-wrap { width: 100%; }
+  .tslot-wrap.active-wrap { width: 100%; }
 }
 
 /* 塔罗原位展开编辑面板 */
@@ -825,10 +833,16 @@ html.dark .ui-confirm-btn.danger {
   margin-top: 10px;
   border: 1px solid var(--hair);
   border-radius: 4px;
-  padding: 14px 12px;
+  padding: 14px 14px 16px;
   background: var(--bg);
-  box-shadow: 0 4px 16px var(--glow2);
+  box-shadow: 0 4px 18px var(--glow2);
   animation: edFadeIn 0.25s ease;
+}
+
+.tc-inline-ed textarea {
+  resize: vertical;
+  min-height: 48px;
+  line-height: 1.6;
 }
 
 .tc-inline-ed[hidden] {

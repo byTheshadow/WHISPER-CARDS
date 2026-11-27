@@ -197,8 +197,12 @@ html.dark .legend .d { box-shadow: 0 0 5px var(--glow), 0 0 10px var(--glow2); }
   font-size: 19px; font-weight: 300;
 }
 .tile.tf { min-width: 74px; height: 76px; font-size: 14px; letter-spacing: 0.2em; }
+.tile.tg { min-width: 60px; height: 70px; font-size: 11px; letter-spacing: 0.16em; }
+.tile.tg .gf-ico { width: 26px; height: 26px; margin-bottom: 4px; color: var(--ink); display: flex; align-items: center; justify-content: center; }
+.tile.tg .gf-ico svg { width: 26px; height: 26px; }
 .tile .tn { font-size: 9.5px; letter-spacing: 0.2em; color: var(--mute); margin-bottom: 4px; }
 .tile .kw { font-size: 10px; letter-spacing: 0.2em; color: var(--mute); margin-top: 4px; }
+.ev-empty { text-align: center; color: var(--mute); font-size: 13px; letter-spacing: 0.2em; padding: 48px 0; }
 .ev-tm { display: block; margin-top: 8px; font-size: 10px; letter-spacing: 0.14em; color: var(--mute); font-variant-numeric: tabular-nums; }
 @keyframes evIn { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
 
