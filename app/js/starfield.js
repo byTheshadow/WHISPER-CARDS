@@ -37,9 +37,9 @@
      D: 静烛（纯净烛火、柔润呼吸弥散、无星无尘） */
   var PRESETS = {
     A: {
-      period: 8.0, amp: 0.35, drift: 0.55, flow: 0.30, auroraW: 0.35, hazeW: 0.25,
-      neb: 0.35, stars: 1.0, trail: 1.0, dust: 0.35,
-      sky: 0.40, fill: 0.35, rim: 0.20, rays: 0.12, core: 0.90, rings: 0, candle: 1.00
+      period: 8.0, amp: 0.25, drift: 0.55, flow: 0.0, auroraW: 0.0, hazeW: 0.0,
+      neb: 0.25, stars: 1.0, trail: 1.0, dust: 0.20,
+      sky: 0.0, fill: 0.0, rim: 0.0, rays: 0.0, core: 0.0, rings: 0, candle: 1.00
     },
     C: {
       period: 6.5, amp: 0.72, drift: 0.45, flow: 0.45, auroraW: 0.65, hazeW: 0.00,

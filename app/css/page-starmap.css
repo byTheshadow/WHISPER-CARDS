@@ -16,16 +16,15 @@
   transition: opacity 0.35s;
 }
 #smCanvas:focus { outline: none; }
-#veil {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;
-  background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0, 0, 0, 0) 55%, var(--veil) 100%);
-}
-#grain { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; opacity: var(--grain-o); }
 
-/* ---------- 4. 页面骨架 ---------- */
-#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none; }
-.page { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; }
-.col { position: relative; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; }
+/* ---------- 4. 星图页面内部交互 ---------- */
+.page[data-page="starmap"] #smCanvas { pointer-events: auto; }
+.page[data-page="starmap"] .col { pointer-events: none; }
+.page[data-page="starmap"] .sm-top,
+.page[data-page="starmap"] .card,
+.page[data-page="starmap"] .sm-empty {
+  pointer-events: auto;
+}
 
 .sm-top {
   display: flex; align-items: center;
