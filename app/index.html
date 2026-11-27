@@ -17,9 +17,35 @@
 </head>
 <body>
 
-<canvas id="bg"></canvas>
-<canvas id="dust"></canvas>
-<div id="grain"></div>
+<canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="aur" aria-hidden="true"></canvas>
+
+<div id="halo" aria-hidden="true">
+  <div class="hl" id="hSky"></div>
+  <div class="hl" id="hRays"></div>
+  <div class="hl" id="hFill"></div>
+  <div class="hl" id="hRim"></div>
+  <svg class="hl ring" id="rOuter" viewBox="-100 -100 200 200">
+    <circle r="98" stroke-width=".6"/>
+    <circle r="92" stroke-width="1" stroke-dasharray="1 5"/>
+    <g id="ticks"></g>
+    <circle r="84" stroke-width=".5"/>
+  </svg>
+  <svg class="hl ring" id="rMid" viewBox="-100 -100 200 200">
+    <circle r="96" stroke-width=".7"/>
+    <polygon points="0,-90 63.6,-63.6 90,0 63.6,63.6 0,90 -63.6,63.6 -90,0 -63.6,-63.6" stroke-width=".5" opacity=".55"/>
+    <path id="octa" stroke-width=".7"/>
+    <g id="mdots"></g>
+  </svg>
+  <svg class="hl ring" id="rInner" viewBox="-100 -100 200 200">
+    <circle r="94" stroke-width="1.1" stroke-dasharray=".5 3.5"/>
+    <circle r="78" stroke-width=".6"/>
+    <circle r="40" stroke-width=".5" opacity=".7"/>
+  </svg>
+  <div class="hl" id="hCore"></div>
+</div>
+
+<div id="veil" aria-hidden="true"></div>
 
 <div id="app">
   <section class="page" data-page="chat" id="pageChat" tabindex="-1">

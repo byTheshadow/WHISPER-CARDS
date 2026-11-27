@@ -67,7 +67,11 @@
     root.classList.toggle('rm', !!prefs.rm);
     root.classList.toggle('fade', prefs.fade !== false);
     root.setAttribute('data-speed', prefs.speed);
-    if (O.fx) { O.fx.setGrain(dark); }
+    if (O.fx) {
+      if (O.fx.setTheme) { O.fx.setTheme(prefs.bgTheme || 'A'); }
+      if (O.fx.setReducedMotion) { O.fx.setReducedMotion(!!prefs.rm); }
+      if (O.fx.setGrain) { O.fx.setGrain(dark); }
+    }
     if (O.sfx) { O.sfx.setVolume(prefs.sound === false ? 0 : 0.7); }
     if (uiRefresh) { uiRefresh(prefs); }
   }
@@ -84,8 +88,13 @@
     if (target && target.focus) { target.focus(); }
     if (name === 'settings') { renderSettings(); }
     if (name === 'decks') { O.decks.open(); }
-    if (name === 'starmap' && O.starmap) { O.starmap.open(); }
-    else if (name !== 'starmap' && O.starmap) { O.starmap.close(); }
+    if (name === 'starmap') {
+      if (O.starmap) { O.starmap.open(); }
+      if (O.fx && O.fx.pause) { O.fx.pause(); }
+    } else {
+      if (O.starmap) { O.starmap.close(); }
+      if (O.fx && O.fx.resume) { O.fx.resume(); }
+    }
   }
 
   function tick(ts) {

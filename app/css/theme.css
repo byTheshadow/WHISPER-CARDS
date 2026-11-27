@@ -11,6 +11,9 @@
   --mute: rgba(18, 18, 20, 0.4);
   --hair: rgba(18, 18, 20, 0.14);
   --sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+  --halo: rgb(0, 0, 0);
+  --ring: rgba(0, 0, 0, 0.4);
+  --vig: rgba(0, 0, 0, 0.05);
 }
 
 html.dark {
@@ -21,6 +24,9 @@ html.dark {
   --glow2: rgba(255, 255, 255, 0.13);
   --mute: rgba(241, 241, 243, 0.4);
   --hair: rgba(241, 241, 243, 0.16);
+  --halo: rgb(255, 255, 255);
+  --ring: rgba(255, 255, 255, 0.5);
+  --vig: rgba(0, 0, 0, 0.6);
 }
 
 /* 内容页（设置 / 牌库）用不透明纸面：参考稿本身就是 body 底色，

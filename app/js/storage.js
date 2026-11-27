@@ -9,6 +9,7 @@
   var KEY = 'stardust.prefs.v1';
   var DEFAULTS = {
     theme: 'light',
+    bgTheme: 'A',
     rm: false,
     session: '',
     win: [2, 5],
@@ -50,6 +51,7 @@
     var p = clone(DEFAULTS);
     if (!raw || typeof raw !== 'object') { return p; }
     if (raw.theme === 'dark' || raw.theme === 'light' || raw.theme === 'system') { p.theme = raw.theme; }
+    if (raw.bgTheme === 'A' || raw.bgTheme === 'C' || raw.bgTheme === 'D') { p.bgTheme = raw.bgTheme; }
     if (typeof raw.rm === 'boolean') { p.rm = raw.rm; }
     if (typeof raw.session === 'string' && /^[0-9]{4}$/.test(raw.session)) { p.session = raw.session; }
     p.win = pair(raw.win, 1, 15, DEFAULTS.win);

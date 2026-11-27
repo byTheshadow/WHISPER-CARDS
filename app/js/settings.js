@@ -16,6 +16,11 @@
 
   var SPEED = [{ v: '1', t: '慢' }, { v: '2', t: '中' }, { v: '3', t: '快' }];
   var THEME = [{ v: 'light', t: '浅' }, { v: 'dark', t: '深' }, { v: 'system', t: '跟随系统' }];
+  var BG_THEMES = [
+    { v: 'A', t: '孤烛通灵' },
+    { v: 'C', t: '秘仪神殿' },
+    { v: 'D', t: '静烛' }
+  ];
 
   /* 事件概率里参与「分 100」的四项；送出是落下之后的独立几率，不占这 100。 */
   var PROB_ROWS = [
@@ -506,6 +511,16 @@
     rowTheme.appendChild(refs.theme.node);
     s.rows.appendChild(rowTheme);
 
+    var rowBgTheme = el('div', 'row');
+    rowBgTheme.appendChild(label('仪式背景', '太虚流转与呼吸场域风格'));
+    refs.bgTheme = O.ui.segCtl({
+      options: BG_THEMES,
+      value: prefs.bgTheme || 'A',
+      onChange: function (v) { api.onPref('bgTheme', v); }
+    });
+    rowBgTheme.appendChild(refs.bgTheme.node);
+    s.rows.appendChild(rowBgTheme);
+
     var rowSound = el('div', 'row');
     rowSound.appendChild(label('声音', '落卡、撤回、熄灭这些声音；关掉就完全静音'));
     refs.sound = O.ui.switchCtl({
@@ -608,6 +623,7 @@
       if (refs.fade) { refs.fade.set(st.fade !== false); }
       if (refs.speed) { refs.speed.set(st.speed); }
       if (refs.theme) { refs.theme.set(st.theme); }
+      if (refs.bgTheme) { refs.bgTheme.set(st.bgTheme || 'A'); }
       if (refs.sound) { refs.sound.set(st.sound !== false); }
       if (refs.rm) { refs.rm.set(!!st.rm); }
     };

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>显影 · 传讯字卡 — 太虚灵境背景</title>
+<style>
+@property --halo{syntax:'<color>';inherits:true;initial-value:rgb(255,255,255)}
+@property --ring{syntax:'<color>';inherits:true;initial-value:rgba(255,255,255,.55)}
+@property --vig{syntax:'<color>';inherits:true;initial-value:rgba(0,0,0,.6)}
+
+/* ---------- 昼：纯白 ---------- */
+:root{
+  --bg:#ffffff;
+  --ink:#000; --ink2:rgba(0,0,0,.86); --mute:rgba(0,0,0,.45);
+  --hair:rgba(0,0,0,.14);
+  --panel:rgba(255,255,255,.92); --card:#fff; --shadow:rgba(0,0,0,.1);
+  --accent:#000;
+  --txglow:0 0 1px #fff,0 0 10px #fff,0 0 22px rgba(255,255,255,.9);
+  --scrim:rgba(255,255,255,.8);
+  --halo:rgb(0,0,0);
+  --ring:rgba(0,0,0,.5);
+  --vig:rgba(0,0,0,.05);
+  --sans:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;
+  --serif:"Songti SC","STSong","Noto Serif CJK SC","Source Han Serif SC","SimSun",serif;
+}
+/* ---------- 夜：纯黑 ---------- */
+html.dark{
+  --bg:#000000;
+  --ink:#fff; --ink2:rgba(255,255,255,.88); --mute:rgba(255,255,255,.45);
+  --hair:rgba(255,255,255,.16);
+  --panel:rgba(0,0,0,.84); --card:#000; --shadow:rgba(0,0,0,.6);
+  --accent:#fff;
+  --txglow:0 0 1px rgba(255,255,255,.5),0 0 10px rgba(255,255,255,.28),0 0 26px rgba(255,255,255,.12);
+  --scrim:rgba(0,0,0,.66);
+  --halo:rgb(255,255,255);
+  --ring:rgba(255,255,255,.55);
+  --vig:rgba(0,0,0,.6);
+}
+html{transition:--halo 1.6s,--ring 1.6s,--vig 1.6s}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:300;transition:background-color 1.6s,color 1.2s}
+
+/* ---------- 背景层 ---------- */
+#sky,#aur{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none}
+#sky{z-index:0}
+#aur{z-index:1}
+#halo{position:fixed;left:50%;top:45%;width:0;height:0;z-index:2;pointer-events:none}
+.hl{position:absolute;left:0;top:0;pointer-events:none;will-change:transform,opacity;transform:translate(-50%,-50%);opacity:0}
+#hSky{width:170vmax;height:170vmax;border-radius:50%;background:radial-gradient(circle closest-side,var(--halo) 0%,transparent 100%)}
+#hFill{width:52vmin;height:92vmin;border-radius:50%;background:radial-gradient(ellipse closest-side,var(--halo) 0%,transparent 78%)}
+#hRim{width:50vmin;height:90vmin;border-radius:50%;background:radial-gradient(ellipse closest-side,transparent 62%,var(--halo) 79%,transparent 97%)}
+#hRays{width:120vmin;height:120vmin;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,var(--halo) 0deg,transparent 2.4deg 5.1deg,var(--halo) 7.5deg);
+  -webkit-mask-image:radial-gradient(circle closest-side,transparent 9%,#000 24%,transparent 96%);
+          mask-image:radial-gradient(circle closest-side,transparent 9%,#000 24%,transparent 96%)}
+#hCore{width:40vmin;height:40vmin;border-radius:50%;background:radial-gradient(circle closest-side,#fff 0%,rgba(255,255,255,.5) 26%,transparent 100%)}
+.ring{overflow:visible}
+.ring *{vector-effect:non-scaling-stroke}
+#rOuter{width:94vmin;height:94vmin}
+#rMid{width:66vmin;height:66vmin}
+#rInner{width:40vmin;height:40vmin}
+.ring circle,.ring line,.ring polygon,.ring path{fill:none;stroke:var(--ring)}
+.ring .dot{fill:var(--ring);stroke:none}
+#veil{position:fixed;inset:0;z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse 85% 78% at var(--cx,50%) var(--cy,45%),transparent 42%,var(--vig) 100%)}
+
+/* ---------- 前景 ---------- */
+.stage{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(64px + env(safe-area-inset-top,0px)) 24px calc(40px + env(safe-area-inset-bottom,0px))}
+.mast{position:fixed;left:calc(20px + env(safe-area-inset-left,0px));top:calc(18px + env(safe-area-inset-top,0px));z-index:6;line-height:1.5}
+.mast .zh{display:block;font-family:var(--serif);font-size:15px;letter-spacing:.42em;color:var(--ink2);text-shadow:var(--txglow)}
+.mast .en{display:block;font-size:10px;letter-spacing:.38em;color:var(--mute)}
+
+/* 蜡烛保留自身颜色 */
+.candle{position:relative;width:80px;height:132px;flex:0 0 auto}
+.dish{position:absolute;left:50%;bottom:0;width:58px;height:12px;margin-left:-29px;border-radius:50%;
+  background:linear-gradient(#b48a4a,#6b4e26);box-shadow:0 2px 10px var(--shadow)}
+html.dark .dish{background:linear-gradient(#8f6c36,#3a2a14)}
+.wax{position:absolute;left:50%;bottom:7px;width:16px;height:60px;margin-left:-8px;border-radius:3px 3px 2px 2px;
+  background:linear-gradient(90deg,#d9cdb3,#fbf5e6 45%,#e6dac0);box-shadow:inset 0 6px 8px -4px rgba(255,214,150,.9),0 0 0 1px rgba(120,90,50,.14)}
+.wick{position:absolute;left:50%;bottom:66px;width:2px;height:8px;margin-left:-1px;background:#2b2118;border-radius:1px}
+.flame-glow{position:absolute;left:50%;bottom:30px;width:150px;height:150px;margin-left:-75px;border-radius:50%;
+  background:radial-gradient(circle closest-side,rgba(255,214,140,.6),rgba(255,190,110,.18) 46%,transparent);will-change:opacity}
+.flame{position:absolute;left:50%;bottom:71px;width:13px;height:34px;margin-left:-6.5px;
+  border-radius:50% 50% 50% 50% / 62% 62% 38% 38%;transform-origin:50% 100%;will-change:transform;
+  background:radial-gradient(ellipse 50% 42% at 50% 74%,#fff 0%,#fff4d2 32%,rgba(255,196,104,.96) 62%,rgba(255,130,40,0) 100%);
+  box-shadow:0 0 12px 3px rgba(255,190,100,.42)}
+.flame::after{content:"";position:absolute;left:50%;bottom:1px;width:6px;height:8px;margin-left:-3px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 70%,rgba(110,150,255,.75),transparent 72%)}
+#anchor{position:absolute;left:50%;bottom:86px;width:0;height:0}
+
+.msg{position:relative;text-align:center;margin-top:30px;max-width:30em}
+.msg::before{content:"";position:absolute;left:-90px;right:-90px;top:-50px;bottom:-40px;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse closest-side,var(--scrim) 0%,var(--scrim) 40%,transparent 100%);transition:background 1.6s}
+.words{font-family:var(--serif);font-size:20px;line-height:1.9;letter-spacing:.1em;color:var(--ink2);text-shadow:var(--txglow)}
+.words span{display:inline-block;margin:0 .32em}
+.cards{display:flex;justify-content:center;align-items:center;margin:18px 0 0}
+.tf{width:58px;height:90px;margin:0 8px;border:1px solid var(--hair);border-radius:4px;background:var(--card);
+  box-shadow:0 8px 24px var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:7px 3px 5px;
+  transform:rotate(var(--rot,0deg)) translateY(var(--dy,0px));transition:background 1.6s}
+.tf .tn{font-size:8px;letter-spacing:.16em;color:var(--mute)}
+.tf .nm{font-family:var(--serif);font-size:12px;letter-spacing:.08em;color:var(--ink2)}
+.tf .kw{font-size:8.5px;color:var(--mute);text-align:center;line-height:1.3}
+.tf .pp{font-size:7.5px;letter-spacing:.2em;color:var(--mute)}
+.tf.rev{transform:rotate(calc(180deg + var(--rot,0deg))) translateY(var(--dy,0px))}
+.hint{margin:22px 0 0;font-size:11px;letter-spacing:.14em;color:var(--mute)}
+
+/* ---------- 调校台 ---------- */
+.panel{position:fixed;z-index:10;right:calc(14px + env(safe-area-inset-right,0px));top:calc(14px + env(safe-area-inset-top,0px));
+  width:min(292px,calc(100vw - 28px));font-size:12px;color:var(--ink2)}
+.tog{display:block;margin-left:auto;background:var(--panel);border:1px solid var(--hair);color:var(--ink);font-family:inherit;
+  font-size:12px;letter-spacing:.2em;padding:7px 12px 7px 14px;cursor:pointer}
+.body{margin-top:6px;background:var(--panel);border:1px solid var(--hair);padding:14px 14px 10px;
+  max-height:calc(100vh - 90px);overflow:auto;transition:background 1.2s}
+.panel.closed .body{display:none}
+.sec{margin:0 0 14px}
+.sec h2{margin:0 0 7px;font-size:11px;font-weight:400;letter-spacing:.2em;color:var(--mute)}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.btns button,.sw{flex:1 1 auto;background:none;border:1px solid var(--hair);color:var(--ink2);font-family:inherit;font-size:12px;
+  letter-spacing:.06em;padding:6px 8px;cursor:pointer;transition:background .3s,color .3s,border-color .3s}
+.btns button.on,.sw.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pre{display:grid;grid-template-columns:1fr 1fr}
+.pre button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-width:0}
+.pre button b{font-weight:400;font-size:10px;letter-spacing:.2em;opacity:.55}
+.pre button small{font-size:10px;opacity:.55;letter-spacing:.04em;margin-top:1px}
+.row2{display:flex;align-items:center;justify-content:space-between;margin:0 0 7px}
+.sl{display:grid;grid-template-columns:36px 1fr 52px;align-items:center;gap:8px;margin:4px 0}
+.sl span{color:var(--mute);font-size:11px;letter-spacing:.1em}
+.sl output{text-align:right;font-size:11px;color:var(--ink2);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:0;accent-color:var(--accent);height:18px;cursor:pointer}
+.ends{display:flex;justify-content:space-between;font-size:10px;color:var(--mute);letter-spacing:.1em;margin-top:2px}
+.foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--hair);padding-top:9px;font-size:10px;color:var(--mute);letter-spacing:.1em}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+.foot .sp{flex:1}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:600px){.words{font-size:18px}.mast .zh{font-size:13px}}
+</style>
+</head>
+<body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="aur" aria-hidden="true"></canvas>
+
+<div id="halo" aria-hidden="true">
+  <div class="hl" id="hSky"></div>
+  <div class="hl" id="hRays"></div>
+  <div class="hl" id="hFill"></div>
+  <div class="hl" id="hRim"></div>
+  <svg class="hl ring" id="rOuter" viewBox="-100 -100 200 200">
+    <circle r="98" stroke-width=".6"/>
+    <circle r="92" stroke-width="1" stroke-dasharray="1 5"/>
+    <g id="ticks"></g>
+    <circle r="84" stroke-width=".5"/>
+  </svg>
+  <svg class="hl ring" id="rMid" viewBox="-100 -100 200 200">
+    <circle r="96" stroke-width=".7"/>
+    <polygon points="0,-90 63.6,-63.6 90,0 63.6,63.6 0,90 -63.6,63.6 -90,0 -63.6,-63.6" stroke-width=".5" opacity=".55"/>
+    <path id="octa" stroke-width=".7"/>
+    <g id="mdots"></g>
+  </svg>
+  <svg class="hl ring" id="rInner" viewBox="-100 -100 200 200">
+    <circle r="94" stroke-width="1.1" stroke-dasharray=".5 3.5"/>
+    <circle r="78" stroke-width=".6"/>
+    <circle r="40" stroke-width=".5" opacity=".7"/>
+  </svg>
+  <div class="hl" id="hCore"></div>
+</div>
+
+<div id="veil" aria-hidden="true"></div>
+
+<div class="mast">
+  <span class="zh">显影 · 传讯字卡</span>
+  <span class="en">WHISPER CARDS</span>
+</div>
+
+<main class="stage">
+  <div class="candle" id="candle">
+    <div class="flame-glow" id="flameGlow"></div>
+    <div class="dish"></div>
+    <div class="wax"></div>
+    <div class="wick"></div>
+    <div class="flame" id="flame"></div>
+    <div id="anchor"></div>
+  </div>
+  <section class="msg">
+    <div class="words"><span>回声</span><span>还在</span><span>往北</span></div>
+    <div class="cards">
+      <div class="tf" style="--rot:-1.2deg;--dy:-3px"><span class="tn">XVII</span><span class="nm">星星</span><span class="kw">远处的光</span><span class="pp">正</span></div>
+      <div class="tf rev" style="--rot:1.2deg;--dy:3px"><span class="tn">XVIII</span><span class="nm">月亮</span><span class="kw">不确定</span><span class="pp">逆</span></div>
+    </div>
+    <p class="hint">前景示例 · 用来检查文字与卡片在背景上的可读性</p>
+  </section>
+</main>
+
+<aside class="panel" id="panel">
+  <button class="tog" id="tog" type="button" aria-expanded="true" aria-controls="pbody">调校</button>
+  <div class="body" id="pbody">
+    <div class="sec">
+      <h2>意境</h2>
+      <div class="btns" id="themeBtns">
+        <button type="button" data-theme="light">昼 · 纯白</button>
+        <button type="button" data-theme="dark">夜 · 纯黑</button>
+      </div>
+    </div>
+    <div class="sec">
+      <h2>预设</h2>
+      <div class="btns pre" id="preBtns" style="grid-template-columns:1fr 1fr 1fr">
+        <button type="button" data-p="A"><b>A</b>孤烛通灵<small>星轨与星点</small></button>
+        <button type="button" data-p="C"><b>B</b>秘仪神殿<small>法阵光环 · 纯净</small></button>
+        <button type="button" data-p="D"><b>C</b>静烛<small>唯烛火与弥散</small></button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="row2"><h2 style="margin:0">神圣呼吸</h2><button type="button" class="sw on" id="breathOn" style="flex:0 0 auto;padding:4px 12px">开</button></div>
+      <label class="sl"><span>周期</span><input type="range" id="rPeriod" min="4" max="12" step="0.1"><output id="oPeriod"></output></label>
+      <label class="sl"><span>幅度</span><input type="range" id="rAmp" min="0" max="100" step="1"><output id="oAmp"></output></label>
+    </div>
+    <div class="sec">
+      <h2>星空流速</h2>
+      <label class="sl" style="grid-template-columns:1fr 70px"><input type="range" id="rDrift" min="0" max="100" step="1" aria-label="星空流速"><output id="oDrift"></output></label>
+      <div class="ends"><span>静谧沉思</span><span>星河流转</span></div>
+    </div>
+    <div class="sec">
+      <h2>灵息流光 / 弥散</h2>
+      <label class="sl" style="grid-template-columns:1fr 70px"><input type="range" id="rFlow" min="0" max="100" step="1" aria-label="灵息流光与弥散强度"><output id="oFlow"></output></label>
+      <div class="ends"><span>隐</span><span>弥漫</span></div>
+    </div>
+    <div class="foot"><i class="pulse" id="pulse"></i><span id="phaseTxt">吸</span><span class="sp"></span><span id="fps">— fps</span></div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.documentElement;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MF = reduce ? 0.2 : 1;
+  var isDark = !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+  root.classList.toggle('dark', isDark);
+
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function mk(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h || w; return c; }
+  function sstep(x) { return x * x * (3 - 2 * x); }
+  var TAU = Math.PI * 2;
+
+  /* ---------- 预设 ----------
+     neb 远景星云 · stars 星点 · trail 星轨 · dust 灵尘
+     flow 滑块强度 · auroraW 极光权重 · hazeW 弥散权重
+     sky/fill/rim/rays/core 光晕各层 · rings 法阵 · candle 烛光 */
+  var PRESETS = {
+    A: { period: 8.0, amp: 0.35, drift: 0.55, flow: 0.30, auroraW: 0.35, hazeW: 0.25, neb: 0.35, stars: 1, trail: 1, dust: 0.35,
+         sky: 0.40, fill: 0.35, rim: 0.20, rays: 0.12, core: 0.90, rings: 0, candle: 1.00 },
+    B: { period: 9.0, amp: 0.32, drift: 0.78, flow: 0.88, auroraW: 1.00, hazeW: 0.20, neb: 1.00, stars: 1, trail: 0, dust: 1.00,
+         sky: 0.90, fill: 0.22, rim: 0.12, rays: 0.10, core: 0.45, rings: 0, candle: 0.55 },
+    C: { period: 6.5, amp: 0.72, drift: 0.45, flow: 0.45, auroraW: 0.65, hazeW: 0.00, neb: 0.25, stars: 0.35, trail: 0, dust: 0.15,
+         sky: 0.60, fill: 0.50, rim: 0.70, rays: 0.40, core: 0.85, rings: 1, candle: 0.90 },
+    D: { period: 8.0, amp: 0.50, drift: 0.30, flow: 0.60, auroraW: 0.00, hazeW: 1.00, neb: 0.00, stars: 0, trail: 0, dust: 0.00,
+         sky: 0.55, fill: 0.45, rim: 0.00, rays: 0.00, core: 1.00, rings: 0, candle: 1.00 }
+  };
+  var P = {}, C = {};
+  for (var k0 in PRESETS.A) { P[k0] = PRESETS.A[k0]; C[k0] = PRESETS.A[k0]; }
+  C.trail = 0;          /* 星轨从零开始“曝光” */
+  P.breath = 1; C.breath = 1;
+
+  /* ---------- 画布 ---------- */
+  var sky = document.getElementById('sky'), sx = sky.getContext('2d');
+  var aur = document.getElementById('aur'), ax = aur.getContext('2d');
+  var dpr = 1, W = 0, H = 0, CX = 0, CY = 0, R = 0, AS = 6;
+  var nebD = null, nebL = null, stars = [], buckets = [[], [], []], dust = [];
+
+  function starSprite(rgb, whiteCore, spikes) {
+    var s = 64, c = mk(s), g = c.getContext('2d'), r = s / 2;
+    var gr = g.createRadialGradient(r, r, 0, r, r, r);
+    gr.addColorStop(0, 'rgba(' + rgb + ',1)');
+    gr.addColorStop(0.1, 'rgba(' + rgb + ',.85)');
+    gr.addColorStop(0.3, 'rgba(' + rgb + ',.18)');
+    gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.fillStyle = gr; g.fillRect(0, 0, s, s);
+    if (spikes) {
+      var lg = g.createLinearGradient(0, 0, s, 0);
+      lg.addColorStop(0, 'rgba(' + rgb + ',0)'); lg.addColorStop(0.5, 'rgba(' + rgb + ',.7)'); lg.addColorStop(1, 'rgba(' + rgb + ',0)');
+      g.fillStyle = lg; g.fillRect(0, r - 0.6, s, 1.2);
+      var lv = g.createLinearGradient(0, 0, 0, s);
+      lv.addColorStop(0, 'rgba(' + rgb + ',0)'); lv.addColorStop(0.5, 'rgba(' + rgb + ',.7)'); lv.addColorStop(1, 'rgba(' + rgb + ',0)');
+      g.fillStyle = lv; g.fillRect(r - 0.6, 0, 1.2, s);
+    }
+    return c;
+  }
+  /* 纯黑白：夜里是白点，昼里是墨点 */
+  var SPR = {
+    d: starSprite('255,255,255'), dBig: starSprite('255,255,255', true, true),
+    l: starSprite('0,0,0'), lBig: starSprite('0,0,0', false, true)
+  };
+
+  function genNebula(dark, S) {
+    var c = mk(S), g = c.getContext('2d'), r = rng(dark ? 1337 : 4242);
+    var h = S / 2, th = -0.55, ux = Math.cos(th), uy = Math.sin(th), px = -uy, py = ux;
+    var rgb = dark ? '255,255,255' : '0,0,0';
+    function gauss() { return (r() + r() + r() - 1.5) / 1.5; }
+    function blob(x, y, rad, a, col) {
+      col = col || rgb;
+      var gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, 'rgba(' + col + ',' + a + ')');
+      gr.addColorStop(0.5, 'rgba(' + col + ',' + (a * 0.4) + ')');
+      gr.addColorStop(1, 'rgba(' + col + ',0)');
+      g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    var t, o, i;
+    g.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+    for (i = 0; i < 36; i++) {
+      t = (r() - 0.5) * 1.9 * h; o = gauss() * 0.16 * h;
+      blob(h + ux * t + px * o, h + uy * t + py * o, h * (0.08 + r() * 0.2), dark ? (0.018 + r() * 0.03) : (0.012 + r() * 0.022));
+    }
+    for (i = 0; i < 12; i++) blob(r() * S, r() * S, h * (0.15 + r() * 0.3), dark ? 0.014 : 0.01);
+    for (i = 0; i < 9; i++) {
+      t = (r() - 0.5) * 1.4 * h; o = gauss() * 0.06 * h;
+      blob(h + ux * t + px * o, h + uy * t + py * o, h * (0.02 + r() * 0.05), dark ? 0.05 : 0.03);
+    }
+    g.globalCompositeOperation = 'destination-out';
+    for (i = 0; i < 20; i++) {
+      t = (r() - 0.5) * 1.6 * h; o = gauss() * 0.05 * h + 0.02 * h;
+      blob(h + ux * t + px * o, h + uy * t + py * o, h * (0.03 + r() * 0.07), 0.35 + r() * 0.3, '0,0,0');
+    }
+    g.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+    var n = Math.min(6000, (S * S / 700) | 0), sc = Math.max(1, S / 1400);
+    for (i = 0; i < n; i++) {
+      var x, y;
+      if (r() < 0.5) { t = (r() - 0.5) * 2 * h; o = gauss() * 0.22 * h; x = h + ux * t + px * o; y = h + uy * t + py * o; }
+      else { x = r() * S; y = r() * S; }
+      var sz = (0.35 + Math.pow(r(), 3) * 1.1) * sc;
+      var a = dark ? (0.12 + r() * 0.45) : (0.04 + r() * 0.14);
+      g.fillStyle = 'rgba(' + rgb + ',' + a.toFixed(3) + ')';
+      g.beginPath(); g.arc(x, y, sz, 0, TAU); g.fill();
+    }
+    g.globalCompositeOperation = 'destination-in';
+    var m = g.createRadialGradient(h, h, h * 0.84, h, h, h);
+    m.addColorStop(0, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = m; g.fillRect(0, 0, S, S);
+    return c;
+  }
+
+  function genStars() {
+    var r = rng(99), n = Math.min(520, Math.round(W * H / 3000));
+    stars = []; buckets = [[], [], []];
+    for (var i = 0; i < n; i++) {
+      var big = r() < 0.04;
+      var s = {
+        r: 40 + Math.sqrt(r()) * (R - 40), a: r() * TAU,
+        sz: big ? 2 + r() * 1.2 : 0.55 + Math.pow(r(), 2.2) * 1.6,
+        al: big ? 0.9 : 0.35 + r() * 0.6,
+        f: 0.4 + r() * 1.8, p: r() * TAU, big: big
+      };
+      s.cls = big || s.al > 0.8 ? 2 : (s.al > 0.58 ? 1 : 0);
+      stars.push(s); buckets[s.cls].push(s);
+    }
+    var m = Math.min(110, Math.round(W * H / 12000));
+    dust = [];
+    for (var j = 0; j < m; j++) dust.push(newDust(r, true));
+  }
+  function newDust(r, anywhere) {
+    r = r || Math.random;
+    return { x: r() * W, y: anywhere ? r() * H : H + 10 + r() * 40, v: 0.5 + r() * 0.8,
+             sz: 0.5 + Math.pow(r(), 2) * 1.6, ph: r() * TAU, al: 0.35 + r() * 0.55 };
+  }
+
+  var anchor = document.getElementById('anchor');
+  var haloEl = document.getElementById('halo');
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    sky.width = Math.round(W * dpr); sky.height = Math.round(H * dpr);
+    sx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    aur.width = Math.max(2, Math.round(W / AS)); aur.height = Math.max(2, Math.round(H / AS));
+    var b = anchor.getBoundingClientRect();
+    CX = b.left; CY = b.top;
+    haloEl.style.left = CX + 'px'; haloEl.style.top = CY + 'px';
+    root.style.setProperty('--cx', CX + 'px'); root.style.setProperty('--cy', CY + 'px');
+    R = Math.max(Math.hypot(CX, CY), Math.hypot(W - CX, CY), Math.hypot(CX, H - CY), Math.hypot(W - CX, H - CY)) * 1.08;
+    var S = Math.min(2048, Math.ceil(2 * R * Math.min(dpr, 1.5) * 0.6));
+    nebD = genNebula(true, S); nebL = genNebula(false, S);
+    genStars();
+  }
+
+  /* ---------- 法阵线条 ---------- */
+  (function buildRings() {
+    var ns = 'http://www.w3.org/2000/svg', g = document.getElementById('ticks'), i, l;
+    for (i = 0; i < 48; i++) {
+      var a = i / 48 * TAU, long = i % 4 === 0;
+      l = document.createElementNS(ns, 'line');
+      l.setAttribute('x1', (Math.cos(a) * 85).toFixed(2)); l.setAttribute('y1', (Math.sin(a) * 85).toFixed(2));
+      l.setAttribute('x2', (Math.cos(a) * (long ? 91 : 88)).toFixed(2)); l.setAttribute('y2', (Math.sin(a) * (long ? 91 : 88)).toFixed(2));
+      l.setAttribute('stroke-width', long ? '.8' : '.45');
+      g.appendChild(l);
+    }
+    var d = '', pts = [];
+    for (i = 0; i < 8; i++) pts.push([Math.cos(i / 8 * TAU - Math.PI / 2) * 90, Math.sin(i / 8 * TAU - Math.PI / 2) * 90]);
+    for (i = 0; i <= 8; i++) { var p = pts[(i * 3) % 8]; d += (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2); }
+    document.getElementById('octa').setAttribute('d', d + 'Z');
+    var md = document.getElementById('mdots');
+    for (i = 0; i < 8; i++) {
+      var c = document.createElementNS(ns, 'circle'), aa = i / 8 * TAU + TAU / 16;
+      c.setAttribute('cx', (Math.cos(aa) * 96).toFixed(2)); c.setAttribute('cy', (Math.sin(aa) * 96).toFixed(2));
+      c.setAttribute('r', '1.6'); c.setAttribute('class', 'dot');
+      md.appendChild(c);
+    }
+  })();
+
+  /* ---------- 低分辨率层：灵息极光 + 弥散 ---------- */
+  var RIB = [
+    { base: 0.27, A1: 0.07, k1: 1.3, w1: 0.06, A2: 0.03, k2: 3.1, w2: 0.09, ph: 0.0, v: 0.013, wd: 0.11 },
+    { base: 0.72, A1: 0.05, k1: 1.9, w1: 0.045, A2: 0.028, k2: 4.0, w2: 0.07, ph: 2.1, v: 0.010, wd: 0.085 }
+  ];
+  var HZ = [
+    { or: 0.16, sp: 0.020, ph: 0.0, rad: 0.55, sy: 0.7 },
+    { or: 0.30, sp: -0.014, ph: 2.0, rad: 0.72, sy: 0.6 },
+    { or: 0.10, sp: 0.032, ph: 4.0, rad: 0.42, sy: 0.9 },
+    { or: 0.38, sp: 0.011, ph: 1.0, rad: 0.85, sy: 0.5 }
+  ];
+  function themePasses(mL) {
+    var ps = [];
+    if (1 - mL > 0.01) ps.push({ w: 1 - mL, op: 'lighter', rgb: '255,255,255', k: 1 });
+    if (mL > 0.01) ps.push({ w: mL, op: 'source-over', rgb: '0,0,0', k: 0.6 });
+    return ps;
+  }
+  function drawFlow(T, aI, hI, mL, br, spd) {
+    var w = aur.width, h = aur.height;
+    ax.globalCompositeOperation = 'source-over'; ax.globalAlpha = 1;
+    ax.clearRect(0, 0, w, h);
+    if (aI < 0.005 && hI < 0.005) return;
+    var passes = themePasses(mL);
+    for (var q = 0; q < passes.length; q++) {
+      var pq = passes[q];
+      ax.globalCompositeOperation = pq.op;
+
+      /* 弥散：几团极大的柔雾绕烛心游移，外加从烛焰升起的烟气 */
+      if (hI > 0.005) {
+        var M = Math.min(W, H) / AS, cx = CX / AS, cy = CY / AS, st = hI * pq.w * pq.k;
+        for (var i = 0; i < HZ.length; i++) {
+          var z = HZ[i], an = z.ph + T * z.sp * spd;
+          var x = cx + Math.cos(an) * z.or * M * 1.4, y = cy + Math.sin(an) * z.or * M * z.sy;
+          var rad = z.rad * M * (1 + 0.1 * br);
+          var a = 0.075 * st * (0.7 + 0.3 * br);
+          var g = ax.createRadialGradient(x, y, 0, x, y, rad);
+          g.addColorStop(0, 'rgba(' + pq.rgb + ',' + a.toFixed(4) + ')');
+          g.addColorStop(0.55, 'rgba(' + pq.rgb + ',' + (a * 0.35).toFixed(4) + ')');
+          g.addColorStop(1, 'rgba(' + pq.rgb + ',0)');
+          ax.fillStyle = g; ax.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+        }
+        for (var j = 0; j < 3; j++) {
+          var u = ((T * spd) / 18 + j / 3) % 1;
+          var wx = cx + Math.sin(u * 5 + j * 2.1) * 0.06 * M * u, wy = cy - u * 0.55 * M;
+          var wr = (0.05 + 0.24 * u) * M;
+          var wa = Math.pow(Math.sin(u * Math.PI), 1.5) * 0.11 * st;
+          var wg = ax.createRadialGradient(wx, wy, 0, wx, wy, wr);
+          wg.addColorStop(0, 'rgba(' + pq.rgb + ',' + wa.toFixed(4) + ')');
+          wg.addColorStop(1, 'rgba(' + pq.rgb + ',0)');
+          ax.fillStyle = wg; ax.fillRect(wx - wr, wy - wr, wr * 2, wr * 2);
+        }
+      }
+
+      /* 极光光带 */
+      if (aI > 0.005) {
+        ax.lineCap = 'round'; ax.lineJoin = 'round';
+        for (var r = 0; r < RIB.length; r++) {
+          var rb = RIB[r], strength = aI * pq.w * pq.k;
+          var c = ((T * rb.v + rb.ph * 0.17) % 1.6) - 0.3;
+          if (r % 2) c = 1 - c;
+          var gr = ax.createLinearGradient(0, 0, w, 0);
+          for (var s = 0; s <= 8; s++) {
+            var uu = s / 8, e = 0.22 + 0.78 * Math.exp(-Math.pow((uu - c) / 0.28, 2));
+            gr.addColorStop(uu, 'rgba(' + pq.rgb + ',' + e.toFixed(3) + ')');
+          }
+          ax.strokeStyle = gr;
+          var base = rb.base + 0.04 * Math.sin(T * 0.021 + rb.ph);
+          ax.beginPath();
+          for (var p = 0; p <= 48; p++) {
+            var xx = (p / 48) * 1.2 - 0.1;
+            var yy = base + rb.A1 * Math.sin(TAU * rb.k1 * xx + T * rb.w1 * TAU * 0.25 + rb.ph)
+                          + rb.A2 * Math.sin(TAU * rb.k2 * xx - T * rb.w2 * TAU * 0.25 + rb.ph * 1.7);
+            if (p) ax.lineTo(xx * w, yy * h); else ax.moveTo(xx * w, yy * h);
+          }
+          var bw = rb.wd * h, ws = [1.0, 0.6, 0.32, 0.14], as = [0.07, 0.09, 0.12, 0.16];
+          for (var k = 0; k < 4; k++) { ax.globalAlpha = as[k] * strength; ax.lineWidth = bw * ws[k]; ax.stroke(); }
+          for (var m = 1; m <= 3; m++) {
+            ax.save(); ax.translate(0, -m * bw * 0.55);
+            ax.globalAlpha = 0.05 / m * strength; ax.lineWidth = bw * 0.55; ax.stroke();
+            ax.restore();
+          }
+          ax.globalAlpha = 1;
+        }
+      }
+    }
+  }
+
+  /* ---------- 星轨：同亮度、同段位的弧合并成一条路径，一次描边 ---------- */
+  var TRAIL_K = 7, TRAIL_CLS = [[0.28, 0.55], [0.5, 0.8], [0.85, 1.2]];
+  function drawTrails(angMid, passes) {
+    var Lr = C.trail * 0.62;
+    var amt = C.trail * C.stars;
+    if (Lr < 0.004 || amt < 0.01) return;
+    sx.lineCap = 'round';
+    for (var q = 0; q < passes.length; q++) {
+      var pq = passes[q];
+      sx.globalCompositeOperation = pq.op; sx.globalAlpha = 1;
+      for (var c = 0; c < 3; c++) {
+        var list = buckets[c];
+        sx.lineWidth = TRAIL_CLS[c][1];
+        for (var k = 0; k < TRAIL_K; k++) {
+          var a = TRAIL_CLS[c][0] * Math.pow(1 - k / TRAIL_K, 1.5) * amt * pq.w * pq.k;
+          if (a < 0.004) continue;
+          sx.strokeStyle = 'rgba(' + pq.rgb + ',' + a.toFixed(3) + ')';
+          sx.beginPath();
+          for (var i = 0; i < list.length; i++) {
+            var s = list[i], th = s.a + angMid;
+            var a1 = th - Lr * k / TRAIL_K, a0 = th - Lr * (k + 1) / TRAIL_K;
+            sx.moveTo(CX + Math.cos(a0) * s.r, CY + Math.sin(a0) * s.r);
+            sx.arc(CX, CY, s.r, a0, a1);
+          }
+          sx.stroke();
+        }
+      }
+    }
+  }
+
+  function drawSky(T, dt, angFar, angMid, br, mL) {
+    sx.globalCompositeOperation = 'source-over'; sx.globalAlpha = 1;
+    sx.clearRect(0, 0, W, H);
+    var passes = themePasses(mL);
+
+    /* 远景星云 */
+    if (C.neb > 0.005) {
+      var nb = C.neb * (0.9 + 0.1 * br);
+      sx.save(); sx.translate(CX, CY); sx.rotate(angFar);
+      if (1 - mL > 0.003) { sx.globalAlpha = (1 - mL) * nb; sx.drawImage(nebD, -R, -R, 2 * R, 2 * R); }
+      if (mL > 0.003) { sx.globalAlpha = mL * nb; sx.drawImage(nebL, -R, -R, 2 * R, 2 * R); }
+      sx.restore();
+    }
+
+    /* 星轨 */
+    drawTrails(angMid, passes);
+
+    /* 星点（星轨模式下闪烁收敛，像曝光里的星头） */
+    if (C.stars > 0.01) {
+      var cosA = Math.cos(angMid), sinA = Math.sin(angMid), twA = 1 - 0.7 * C.trail;
+      for (var q = 0; q < passes.length; q++) {
+        var pq = passes[q], sp = pq.rgb === '0,0,0' ? [SPR.l, SPR.lBig] : [SPR.d, SPR.dBig];
+        sx.globalCompositeOperation = pq.op;
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          var ca = Math.cos(s.a), sa = Math.sin(s.a);
+          var x = CX + (ca * cosA - sa * sinA) * s.r, y = CY + (sa * cosA + ca * sinA) * s.r;
+          if (x < -30 || y < -30 || x > W + 30 || y > H + 30) continue;
+          var tw = 0.6 * (0.5 + 0.5 * Math.sin(T * s.f + s.p)) + 0.4 * (0.5 + 0.5 * Math.sin(T * s.f * 2.7 + s.p * 1.3));
+          tw = 1 - twA + twA * tw;
+          var a = s.al * (0.28 + 0.72 * tw) * pq.w * (pq.rgb === '0,0,0' ? 0.75 : 1) * C.stars;
+          if (a < 0.01) continue;
+          var d = s.sz * (s.big ? 13 : 10) * (0.88 + 0.12 * tw);
+          sx.globalAlpha = a;
+          sx.drawImage(s.big ? sp[1] : sp[0], x - d / 2, y - d / 2, d, d);
+        }
+      }
+    }
+
+    /* 近景灵尘 */
+    if (C.dust > 0.01) {
+      var rise = 8 + 26 * C.drift;
+      for (var j = 0; j < dust.length; j++) {
+        var p = dust[j];
+        p.y -= rise * p.v * dt;
+        p.x += Math.sin(p.y * 0.005 + p.ph + T * 0.15) * 12 * p.v * dt;
+        if (p.y > CY) p.x += (CX - p.x) * 0.035 * dt;
+        if (p.y < -12) dust[j] = newDust();
+      }
+      for (q = 0; q < passes.length; q++) {
+        pq = passes[q];
+        var spr = pq.rgb === '0,0,0' ? SPR.l : SPR.d;
+        sx.globalCompositeOperation = pq.op;
+        for (j = 0; j < dust.length; j++) {
+          p = dust[j];
+          var fy = p.y / H, life = Math.min(1, (1 - fy) * 6) * Math.min(1, fy * 2.2 + 0.05);
+          if (life <= 0) continue;
+          var near = Math.max(0, 1 - Math.hypot(p.x - CX, p.y - CY) / 160);
+          var al = p.al * life * (0.75 + 0.25 * Math.sin(T * 1.3 + p.ph)) * (1 + near * 0.8) * pq.w * pq.k * C.dust;
+          var dd = p.sz * 7;
+          sx.globalAlpha = Math.min(1, al);
+          sx.drawImage(spr, p.x - dd / 2, p.y - dd / 2, dd, dd);
+        }
+      }
+    }
+    sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ---------- 光晕（夜：白光；昼：极淡的墨晕） ---------- */
+  var L = {
+    sky:  { el: document.getElementById('hSky'),  lag: 1.0, gain: 0.05, dark: 0.14, light: 0.035 },
+    rays: { el: document.getElementById('hRays'), lag: 0.7, gain: 0.10, dark: 0.14, light: 0.06 },
+    fill: { el: document.getElementById('hFill'), lag: 0.35, gain: 0.12, dark: 0.20, light: 0.04 },
+    rim:  { el: document.getElementById('hRim'),  lag: 0.45, gain: 0.14, dark: 0.40, light: 0.12 },
+    core: { el: document.getElementById('hCore'), lag: 0.0, gain: 0.16, dark: 0.50, light: 0.0 }
+  };
+  var RINGS = [
+    { el: document.getElementById('rOuter'), spd: 1.1, lag: 0.8 },
+    { el: document.getElementById('rMid'), spd: -0.7, lag: 0.5 },
+    { el: document.getElementById('rInner'), spd: 1.8, lag: 0.25 }
+  ];
+  var flame = document.getElementById('flame'), flameGlow = document.getElementById('flameGlow');
+
+  /* ---------- 主循环 ---------- */
+  var last = performance.now(), T = 0, phi = 0, angFar = 0, angMid = 0, rayA = 0;
+  var ringA = [0, 0, 0], mL = isDark ? 0 : 1, fpsN = 0, fpsT = 0;
+  var pulseEl = document.getElementById('pulse'), fpsEl = document.getElementById('fps'), phaseEl = document.getElementById('phaseTxt');
+
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var dtm = dt * MF; T += dtm;
+    var ke = 1 - Math.exp(-dt * 1.8), kTrail = 1 - Math.exp(-dt * (P.trail > C.trail ? 0.35 : 1.5));
+    for (var key in P) C[key] += (P[key] - C[key]) * (key === 'trail' ? kTrail : ke);
+    mL += ((isDark ? 0 : 1) - mL) * (1 - Math.exp(-dt * 2.2));
+
+    phi += dtm * TAU / C.period;
+    var amp = C.amp * C.breath * (reduce ? 0.4 : 1);
+    function breathAt(lag) { return sstep((1 - Math.cos(phi - lag)) / 2); }
+    var b0 = breathAt(0);
+
+    var Tfar = 480 * Math.pow(0.125, C.drift);
+    angFar += dtm * TAU / Tfar;
+    angMid += dtm * TAU / (Tfar / 1.6);
+    rayA += dtm * 0.6;
+
+    drawSky(T, dtm, angFar, angMid, 1 - amp + amp * b0, mL);
+    drawFlow(T, C.flow * C.auroraW * (0.9 + 0.1 * b0), C.flow * C.hazeW, mL, 1 - amp + amp * b0, 0.5 + 1.5 * C.drift);
+
+    var n = Math.sin(T * 7.3) * 0.5 + Math.sin(T * 13.1 + 1) * 0.3 + Math.sin(T * 23.7 + 2) * 0.2;
+    if (reduce) n *= 0.3;
+    flame.style.transform = 'scale(' + (1 - 0.03 * n).toFixed(3) + ',' + (1 + 0.06 * n).toFixed(3) + ') skewX(' + (n * 2.2).toFixed(2) + 'deg)';
+    flameGlow.style.opacity = (C.candle * (0.82 + 0.1 * n + 0.08 * b0)).toFixed(3);
+
+    for (var name in L) {
+      var l = L[name], bi = breathAt(l.lag);
+      var s = 1 + amp * l.gain * bi;
+      var base = l.dark + (l.light - l.dark) * mL;
+      var op = base * C[name] * (1 - amp * 0.35 + amp * 0.35 * bi);
+      if (name === 'core') op *= (1 + 0.04 * n) * (0.6 + 0.4 * C.candle);
+      l.el.style.opacity = Math.max(0, op).toFixed(3);
+      l.el.style.transform = 'translate(-50%,-50%) scale(' + s.toFixed(4) + ')' + (name === 'rays' ? ' rotate(' + rayA.toFixed(2) + 'deg)' : '');
+    }
+    for (var i = 0; i < RINGS.length; i++) {
+      var rg = RINGS[i], rb = breathAt(rg.lag);
+      ringA[i] += dtm * rg.spd;
+      rg.el.style.opacity = (C.rings * (0.55 + 0.45 * rb) * (0.85 - 0.15 * mL)).toFixed(3);
+      rg.el.style.transform = 'translate(-50%,-50%) scale(' + (1 + amp * 0.06 * rb).toFixed(4) + ') rotate(' + ringA[i].toFixed(2) + 'deg)';
+    }
+
+    pulseEl.style.transform = 'scale(' + (0.6 + 0.8 * (C.breath > 0.5 ? b0 : 0.5)).toFixed(3) + ')';
+    phaseEl.textContent = C.breath > 0.5 ? (Math.sin(phi) >= 0 ? '吸' : '呼') : '静';
+
+    fpsN++; fpsT += dt;
+    if (fpsT >= 0.5) { fpsEl.textContent = Math.round(fpsN / fpsT) + ' fps'; fpsN = 0; fpsT = 0; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- 调校台 ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var rPeriod = $('rPeriod'), rAmp = $('rAmp'), rDrift = $('rDrift'), rFlow = $('rFlow');
+  function outText() {
+    $('oPeriod').textContent = (+P.period).toFixed(1) + ' 秒';
+    $('oAmp').textContent = Math.round(P.amp * 100) + '%';
+    $('oDrift').textContent = Math.round(480 * Math.pow(0.125, P.drift)) + ' 秒/周';
+    $('oFlow').textContent = Math.round(P.flow * 100) + '%';
+  }
+  function syncUI() {
+    rPeriod.value = P.period; rAmp.value = Math.round(P.amp * 100);
+    rDrift.value = Math.round(P.drift * 100); rFlow.value = Math.round(P.flow * 100);
+    outText();
+  }
+  function markPreset(id) {
+    var bs = document.querySelectorAll('#preBtns button');
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-p') === id);
+  }
+  function applyPreset(id) {
+    var p = PRESETS[id];
+    for (var k in p) P[k] = p[k];
+    syncUI(); markPreset(id);
+  }
+  function setTheme(d) {
+    isDark = d; root.classList.toggle('dark', d);
+    var bs = document.querySelectorAll('#themeBtns button');
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', (bs[i].getAttribute('data-theme') === 'dark') === d);
+  }
+
+  document.querySelectorAll('#themeBtns button').forEach(function (b) {
+    b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme') === 'dark'); });
+  });
+  document.querySelectorAll('#preBtns button').forEach(function (b) {
+    b.addEventListener('click', function () { applyPreset(b.getAttribute('data-p')); });
+  });
+  function bind(el, key, scale) {
+    el.addEventListener('input', function () { P[key] = el.value / scale; outText(); markPreset(null); });
+  }
+  bind(rPeriod, 'period', 1); bind(rAmp, 'amp', 100); bind(rDrift, 'drift', 100); bind(rFlow, 'flow', 100);
+  $('breathOn').addEventListener('click', function () {
+    P.breath = P.breath > 0.5 ? 0 : 1;
+    this.classList.toggle('on', P.breath > 0.5);
+    this.textContent = P.breath > 0.5 ? '开' : '关';
+  });
+  var panel = $('panel'), tog = $('tog');
+  tog.addEventListener('click', function () {
+    var closed = panel.classList.toggle('closed');
+    tog.setAttribute('aria-expanded', String(!closed));
+  });
+  if (window.innerWidth < 600) { panel.classList.add('closed'); tog.setAttribute('aria-expanded', 'false'); }
+
+  setTheme(isDark);
+  applyPreset('A');
+  resize();
+  var rz;
+  window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(resize, 180); });
+  requestAnimationFrame(function (t) { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>
