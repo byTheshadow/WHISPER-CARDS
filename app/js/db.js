@@ -280,6 +280,21 @@
     return '内存（不会保留）';
   }
 
+  function getSeenMark() {
+    try {
+      var v = win.localStorage.getItem('stardust.seenMark');
+      return v ? parseInt(v, 10) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setSeenMark(ts) {
+    try {
+      win.localStorage.setItem('stardust.seenMark', String(ts));
+    } catch (e) {}
+  }
+
   O.db = {
     ready: ready,
     loadDecks: loadDecks,
@@ -290,6 +305,8 @@
     saveEvents: saveEvents,
     clear: clear,
     mode: function () { return mode; },
-    label: label
+    label: label,
+    getSeenMark: getSeenMark,
+    setSeenMark: setSeenMark
   };
 })(window);

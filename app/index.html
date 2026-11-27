@@ -93,6 +93,7 @@
   </section>
 
   <section class="page" data-page="starmap" id="pageStarmap" tabindex="-1" hidden>
+    <canvas id="smCanvas" tabindex="0" aria-label="星图：拖动旋转星盘，左右方向键在会话之间切换"></canvas>
     <div class="col">
       <header class="sm-top">
         <button class="sm-back" id="btnStarmapBack" type="button" aria-label="返回对话">‹ 返回</button>
@@ -103,19 +104,32 @@
         <span class="sp"></span>
         <button class="theme-btn" id="btnStarmapTheme" type="button" aria-label="切换深浅色"><i class="moon"></i></button>
       </header>
+
+      <div class="sm-toast" id="smToast" aria-live="polite">
+        <span class="k">一颗新星显影</span>
+        <span class="v" id="smToastV"></span>
+      </div>
+
       <div class="starmap-stage" id="starmapStage">
-        <canvas id="smCanvas" class="sm-canvas"></canvas>
-        <div class="sm-empty" id="smEmpty" hidden>还没有留下历史星尘<br><small>完成一次会话并「送走」后，光点将在这里显影成星</small></div>
+        <div class="sm-empty" id="smEmpty" hidden>
+          <span class="t">还没有星辰显影</span>
+          <span class="now" id="smNow"><i></i>此刻 · 子时方位</span>
+          <small>完成一次会话并「送走」后，它会化作流星<br>浑仪随之合拢成星盘，第一颗星落进这枚星位</small>
+          <button class="sm-go" id="smEmptyGo" type="button">开始一场会话</button>
+        </div>
         <div class="foot" id="smFoot">
-          <span class="hint">拖动旋转　上下倾斜　轻点星空</span>
+          <span class="hint" id="smHint">拖动旋转　上下俯仰　轻点星辰</span>
           <div class="legend">
-            <span class="g"><i class="d" style="width:3px;height:3px"></i><i class="d" style="width:8px;height:8px"></i>消息数</span>
+            <span class="g"><i class="d" style="width:3px;height:3px"></i><i class="d" style="width:7px;height:7px"></i>消息数</span>
             <i class="sep"></i>
-            <span class="g"><i class="d" style="width:5px;height:5px;opacity:.3"></i><i class="d" style="width:5px;height:5px"></i>越亮越近</span>
+            <span class="g"><i class="d" style="width:5px;height:5px;opacity:.35"></i><i class="d" style="width:5px;height:5px"></i>越亮越近</span>
+            <i class="sep"></i>
+            <span class="g">方位即时辰</span>
           </div>
         </div>
       </div>
-      <div class="card" id="smCard" role="dialog" aria-labelledby="smCno">
+
+      <div class="card" id="smCard" role="dialog" aria-labelledby="smCno" hidden>
         <div class="in" id="smCardIn">
           <div class="ch">
             <span class="cn">No.</span>
@@ -124,7 +138,7 @@
             <button class="ab" id="smCardClose" type="button">收起</button>
           </div>
           <div class="ct" id="smMeta"></div>
-          <div class="cm"><span id="smMsg">共 0 段</span><i class="sep"></i><span id="smDeck"></span></div>
+          <div class="cm"><span id="smMsg"></span><i class="sep"></i><span id="smDur"></span><i class="sep"></i><span id="smDeck"></span></div>
         </div>
         <div class="ca">
           <button class="cb" id="smBtnReplay" type="button">回放</button>

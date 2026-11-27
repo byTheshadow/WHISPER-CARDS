@@ -274,6 +274,7 @@
     $('btnDecksBack').addEventListener('click', function () { showPage('settings'); });
     if ($('btnStarmap')) { $('btnStarmap').addEventListener('click', function () { showPage('starmap'); }); }
     if ($('btnStarmapBack')) { $('btnStarmapBack').addEventListener('click', function () { showPage('chat'); }); }
+    if ($('smEmptyGo')) { $('smEmptyGo').addEventListener('click', function () { showPage('chat'); }); }
     if ($('btnStarmapTheme')) { $('btnStarmapTheme').addEventListener('click', toggleTheme); }
     if ($('sessNo')) {
       $('sessNo').addEventListener('click', function () { showPage('starmap'); });
@@ -310,26 +311,33 @@
         if (O.starmap) {
       O.starmap.mount({
         canvas: $('smCanvas'),
+        stage: $('starmapStage'),
         empty: $('smEmpty'),
-        card: $('smCard'),
+        now: $('smNow'),
+        foot: $('smFoot'),
+        hint: $('smHint'),
         cnt: $('smCnt'),
-        smCno: $('smCno'),
-        smMeta: $('smMeta'),
-        smMsg: $('smMsg'),
-        smDeck: $('smDeck'),
+        toast: $('smToast'),
+        toastV: $('smToastV'),
+        card: $('smCard'),
+        cno: $('smCno'),
+        meta: $('smMeta'),
+        msg: $('smMsg'),
+        dur: $('smDur'),
+        deck: $('smDeck'),
         cardClose: $('smCardClose'),
         btnView: $('smBtnView'),
         btnReplay: $('smBtnReplay'),
         ovSession: $('ovSession'),
         sessTitle: $('sessTitle'),
         sessClose: $('sessClose'),
+        sessHist: $('sessHist'),
         replayBar: $('sessReplayBar'),
         playBtn: $('sessPlayBtn'),
         track: $('sessTrack'),
         fill: $('sessFill'),
         knob: $('sessKnob'),
-        clk: $('sessClk'),
-        sessHist: $('sessHist')
+        clk: $('sessClk')
       });
     }
     O.decks.mount({
