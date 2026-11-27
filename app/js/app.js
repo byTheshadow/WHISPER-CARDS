@@ -355,6 +355,7 @@
         cardClose: $('smCardClose'),
         btnView: $('smBtnView'),
         btnReplay: $('smBtnReplay'),
+        btnDel: $('smBtnDel'),
         ovSession: $('ovSession'),
         sessTitle: $('sessTitle'),
         sessClose: $('sessClose'),

@@ -151,6 +151,8 @@ html.dark .legend .d { box-shadow: 0 0 5px var(--glow), 0 0 10px var(--glow2); }
 .ca { display: flex; align-items: center; justify-content: center; margin-top: 14px; border-top: 1px solid var(--hair); }
 .ca .sep { display: inline-block; width: 1px; height: 14px; background: var(--hair); }
 .cb { flex: 1; font-size: 13.5px; font-weight: 400; letter-spacing: 0.36em; padding: 14px 0 12px 0.36em; }
+.cb.sm-btn-del { color: var(--mute); transition: color 0.2s; }
+.cb.sm-btn-del:hover { color: #d64a4a; }
 
 /* ---------- 6. 全篇 / 回放覆盖层 ---------- */
 .ov {

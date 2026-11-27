@@ -242,6 +242,46 @@
     });
   }
 
+  function del(key) {
+    return new Promise(function (resolve, reject) {
+      if (mode === 'memory') { resolve(true); return; }
+      if (mode === 'localStorage') {
+        var all = lsRead();
+        delete all[key];
+        lsWrite(all);
+        resolve(true);
+        return;
+      }
+      var tx;
+      try { tx = db.transaction(STORE, 'readwrite'); } catch (e) { reject(e); return; }
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = function () { resolve(true); };
+      tx.onerror = function () { reject(tx.error || new Error('删除失败')); };
+      tx.onabort = function () { reject(tx.error || new Error('删除中断')); };
+    });
+  }
+
+  function deleteSession(no) {
+    return ready().then(ensure).then(function () {
+      return loadSessions();
+    }).then(function (list) {
+      var filtered = [];
+      var i;
+      for (i = 0; i < (list || []).length; i++) {
+        if (list[i] && list[i].no !== no) {
+          filtered.push(list[i]);
+        }
+      }
+      return saveSessions(filtered);
+    }).then(function () {
+      var k = evKey(no);
+      delete cache.events[k];
+      return del(k);
+    }).then(function () {
+      return true;
+    });
+  }
+
   function dropIdb() {
     return new Promise(function (resolve) {
       if (!win.indexedDB) { resolve(true); return; }
@@ -303,6 +343,7 @@
     saveSessions: saveSessions,
     loadEvents: loadEvents,
     saveEvents: saveEvents,
+    deleteSession: deleteSession,
     clear: clear,
     mode: function () { return mode; },
     label: label,

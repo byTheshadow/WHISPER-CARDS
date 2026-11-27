@@ -1850,6 +1850,17 @@
     });
   }
 
+  function deleteCurrentSession() {
+    if (!curSess) { return; }
+    var no = curSess.no;
+    var ok = win.confirm('确认抹去会话 No.' + no + ' 吗？此操作无法撤回。');
+    if (!ok) { return; }
+    O.db.deleteSession(no).then(function () {
+      closeCard();
+      open();
+    });
+  }
+
   function renderProgress() {
     var n = events.length, ratio = n ? replay.idx / n : 0;
     refs.fill.style.width = (ratio * 100) + '%';
@@ -2009,6 +2020,7 @@
     refs.cardClose.addEventListener('click', closeCard);
     refs.btnView.addEventListener('click', openView);
     refs.btnReplay.addEventListener('click', openReplay);
+    if (refs.btnDel) { refs.btnDel.addEventListener('click', deleteCurrentSession); }
     refs.sessClose.addEventListener('click', closeOverlay);
     refs.playBtn.addEventListener('click', togglePlay);
     refs.track.addEventListener('click', seek);

@@ -11,7 +11,7 @@
 
   /* 产品名（2026-11-26 定）：主名「显影」，副标题＝品类「传讯字卡」+ 英文。
      改这一处 + index.html 的 <title>；M6 导出图的水印也读这两个常量。 */
-  var PRODUCT = '显影';
+  var PRODUCT = '低语';
   var SUBTITLE = '传讯字卡 · WHISPER CARDS';
 
   var SPEED = [{ v: '1', t: '慢' }, { v: '2', t: '中' }, { v: '3', t: '快' }];
@@ -586,6 +586,7 @@
     var box = el('div', 'about');
     box.appendChild(el('div', 'v', PRODUCT));
     box.appendChild(el('div', 'sub', SUBTITLE));
+    box.appendChild(el('div', 'author', '作者：by shadow'));
     box.appendChild(el('div', null, '每一次落卡都来自本机随机，不经过任何服务器'));
     box.appendChild(el('div', null, '没有 AI，也没有语义判断；意义由你自己赋予'));
     box.appendChild(el('p', 'note', '数据只存在这台设备上（' + api.storage() + '）。系统可能在空间紧张时清理它，重要内容请自行导出。'));

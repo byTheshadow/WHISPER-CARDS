@@ -19,7 +19,7 @@
     fade: true,
     speed: '1',
     sound: true,
-    probs: { retract: 12, clear: 6, pause: 12, abandon: 5, send: 25 }
+    probs: { retract: 4, clear: 6, pause: 14, abandon: 5, send: 25 }
   };
   var PROB_KEYS = ['retract', 'clear', 'pause', 'abandon', 'send'];
   var prefs = null;

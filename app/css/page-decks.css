@@ -658,11 +658,30 @@ html.dark .ui-confirm-btn.danger {
   transform: translateY(6px);
 }
 
+.wl-cv-wrap {
+  position: relative;
+  width: 240px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 .wl-char {
   font-size: 88px;
   line-height: 1;
   color: var(--ink);
   filter: url(#rub);
+  transition: opacity 0.25s ease;
 }
 
 .wl-rule {
@@ -751,88 +770,26 @@ html.dark .ui-confirm-btn.danger {
   color: var(--ink2);
 }
 
-/* 展字笺 · 塔罗布袋与牌阵布局 */
+/* 展字笺 · 塔罗布局与原位编辑 */
+.tr-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.tr-cnt-txt {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+}
+
 .tr-stage {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-}
-
-@media (max-width: 900px) {
-  .tr-stage { flex-direction: column; }
-}
-
-.pouch-wrap {
-  flex: 0 0 180px;
-  width: 180px;
-  display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-right: 24px;
-}
-
-@media (max-width: 900px) {
-  .pouch-wrap {
-    width: 100%;
-    margin-right: 0;
-    margin-bottom: 20px;
-  }
-}
-
-.pouch {
   position: relative;
-  width: 160px;
-  height: 190px;
-}
-
-.pouch svg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-}
-
-.pouch .pk-body {
-  fill: var(--bg);
-  stroke: var(--ink2);
-  stroke-width: 1;
-}
-
-.pouch .pk-in {
-  fill: var(--ink);
-}
-
-.pouch .pk-line {
-  fill: none;
-  stroke: var(--ink2);
-  stroke-width: 1;
-  stroke-linecap: round;
-}
-
-.pouch .pk-stitch {
-  fill: none;
-  stroke: var(--mute);
-  stroke-width: 0.8;
-  stroke-dasharray: 2 3;
-}
-
-.pouch .pk-txt {
-  fill: var(--mute);
-  font-size: 8px;
-  letter-spacing: 3px;
-}
-
-.pouch-act {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.pouch-n {
-  font-size: 11.5px;
-  letter-spacing: 0.2em;
-  color: var(--mute);
-  margin-bottom: 8px;
+  width: 100%;
 }
 
 .tgrid-box {
@@ -847,14 +804,45 @@ html.dark .ui-confirm-btn.danger {
   width: 25%;
   padding: 6px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .tslot-wrap { width: 33.333%; }
 }
 
-@media (max-width: 440px) {
+@media (max-width: 600px) {
   .tslot-wrap { width: 50%; }
+}
+
+@media (max-width: 400px) {
+  .tslot-wrap { width: 100%; }
+}
+
+/* 塔罗原位展开编辑面板 */
+.tc-inline-ed {
+  margin-top: 10px;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  padding: 14px 12px;
+  background: var(--bg);
+  box-shadow: 0 4px 16px var(--glow2);
+  animation: edFadeIn 0.25s ease;
+}
+
+.tc-inline-ed[hidden] {
+  display: none;
+}
+
+@keyframes edFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tslot-wrap.active-wrap .tc-card .tc-inner {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--hair), 0 10px 24px var(--glow);
 }
 
 .tc-card {

@@ -74,6 +74,15 @@
   color: var(--mute);
 }
 
+.about .author {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ink2);
+  opacity: 0.85;
+}
+
 .about .note {
   margin: 18px 0 0;
   font-size: 10.5px;
