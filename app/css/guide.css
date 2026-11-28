@@ -1,6 +1,6 @@
 /* 初临引渡 · 新手仪式引导系统
-   继承东方玄学微光宣纸美学，兼容 Chrome 61 基线
-   包含三幕微卷、墨洇诗句、模式演示器与底部流转轨道 */
+   严格继承 theme.css 的 CSS 变量系统（--bg, --ink, --ink2, --mute, --hair）
+   彻底保障浅色（宣纸白底黑字）与深色（墨玉黑底白字）的高对比度与典雅美感 */
 
 .guide-overlay {
   position: fixed;
@@ -13,16 +13,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(11, 15, 18, 0.72);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(18, 18, 20, 0.45);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-html:not(.dark) .guide-overlay {
-  background: rgba(244, 244, 242, 0.75);
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .guide-overlay {
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+}
+
+html.dark .guide-overlay {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .guide-overlay.active {
@@ -35,20 +40,25 @@ html:not(.dark) .guide-overlay {
   pointer-events: none;
 }
 
-/* 引渡卷轴容器 */
+/* 引渡卷轴容器：实色宣纸/墨玉底板 */
 .guide-card {
   position: relative;
   width: min(540px, calc(100vw - 32px));
-  max-height: calc(100vh - 64px);
+  max-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
-  background: var(--panel, rgba(20, 26, 31, 0.88));
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--hair);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   padding: 24px 28px 20px;
   box-sizing: border-box;
-  transform: translateY(16px) scale(0.98);
-  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transform: translateY(14px) scale(0.98);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), background-color 0.8s, border-color 0.8s, color 0.8s;
+}
+
+html.dark .guide-card {
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.7);
 }
 
 .guide-overlay.active .guide-card {
@@ -62,7 +72,7 @@ html:not(.dark) .guide-overlay {
   right: 18px;
   background: none;
   border: 0;
-  color: var(--mute, rgba(255, 255, 255, 0.45));
+  color: var(--mute);
   font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -72,7 +82,7 @@ html:not(.dark) .guide-overlay {
 }
 
 .guide-skip:hover {
-  color: var(--ink, #ffffff);
+  color: var(--ink);
 }
 
 /* 卷轴滚动视口 */
@@ -117,7 +127,7 @@ html:not(.dark) .guide-overlay {
   content: "";
   width: 24px;
   height: 1px;
-  background: var(--hair, rgba(255, 255, 255, 0.16));
+  background: var(--hair);
 }
 
 .act-head h2 {
@@ -126,7 +136,7 @@ html:not(.dark) .guide-overlay {
   font-weight: 400;
   font-size: 13px;
   letter-spacing: 0.36em;
-  color: var(--mute, rgba(255, 255, 255, 0.45));
+  color: var(--mute);
 }
 
 /* 诗意主文案：水墨洇开动效 */
@@ -134,10 +144,10 @@ html:not(.dark) .guide-overlay {
   margin: 0 auto;
   font-family: var(--serif, "Songti SC", "SimSun", serif);
   font-weight: 400;
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1.85;
   letter-spacing: 0.12em;
-  color: var(--ink2, rgba(255, 255, 255, 0.92));
+  color: var(--ink);
 }
 
 .guide-verse .vl {
@@ -186,7 +196,7 @@ html:not(.dark) .guide-overlay {
   display: flex;
   align-items: flex-start;
   padding: 11px 2px;
-  border-top: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  border-top: 1px solid var(--hair);
   opacity: 0;
   transform: translateY(6px);
   transition: opacity 0.7s, transform 0.7s;
@@ -194,7 +204,7 @@ html:not(.dark) .guide-overlay {
 }
 
 .guide-points li:last-child {
-  border-bottom: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  border-bottom: 1px solid var(--hair);
 }
 
 .guide-act.active .guide-points li {
@@ -210,10 +220,15 @@ html:not(.dark) .guide-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--hair);
   font-family: var(--serif, "Songti SC", "SimSun", serif);
   font-size: 11px;
-  color: var(--ink2, rgba(255, 255, 255, 0.88));
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+html.dark .guide-glyph {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .guide-points p {
@@ -221,7 +236,7 @@ html:not(.dark) .guide-overlay {
   font-size: 13.5px;
   line-height: 1.8;
   letter-spacing: 0.04em;
-  color: var(--ink2, rgba(255, 255, 255, 0.88));
+  color: var(--ink2);
 }
 
 /* ---------- 传讯模式演示器 ---------- */
@@ -238,8 +253,8 @@ html:not(.dark) .guide-overlay {
 .demo-tab {
   flex: 1 1 0;
   background: none;
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
-  color: var(--ink2, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--hair);
+  color: var(--mute);
   font-family: inherit;
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -253,15 +268,15 @@ html:not(.dark) .guide-overlay {
 }
 
 .demo-tab.active {
-  background: var(--ink, #ffffff);
-  border-color: var(--ink, #ffffff);
-  color: var(--bg, #000000);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
 }
 
 .demo-tab small {
   display: block;
   font-size: 9.5px;
-  opacity: 0.6;
+  opacity: 0.75;
   margin-top: 1px;
 }
 
@@ -269,21 +284,21 @@ html:not(.dark) .guide-overlay {
   font-size: 12px;
   line-height: 1.6;
   letter-spacing: 0.04em;
-  color: var(--mute, rgba(255, 255, 255, 0.6));
+  color: var(--mute);
   margin: 0 0 10px;
   min-height: 1.6em;
 }
 
 .demo-box {
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
-  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hair);
+  background: rgba(0, 0, 0, 0.03);
   padding: 12px 14px;
   min-height: 180px;
   box-sizing: border-box;
 }
 
-html:not(.dark) .demo-box {
-  background: rgba(255, 255, 255, 0.4);
+html.dark .demo-box {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* 模式一：实时共振模拟 */
@@ -297,7 +312,7 @@ html:not(.dark) .demo-box {
   flex: 0 0 24px;
   font-size: 11px;
   letter-spacing: 0.15em;
-  color: var(--mute, rgba(255, 255, 255, 0.45));
+  color: var(--mute);
 }
 
 .demo-live-content {
@@ -311,7 +326,7 @@ html:not(.dark) .demo-box {
   font-family: var(--serif, "Songti SC", "SimSun", serif);
   font-size: 15px;
   letter-spacing: 0.08em;
-  color: var(--ink2, rgba(255, 255, 255, 0.9));
+  color: var(--ink);
 }
 
 .demo-typed .ch {
@@ -338,7 +353,7 @@ html:not(.dark) .demo-box {
   height: 1em;
   margin-left: 2px;
   vertical-align: -0.1em;
-  background: var(--ink, #ffffff);
+  background: var(--ink);
   animation: caretBlink 1.1s ease-in-out infinite;
 }
 
@@ -355,9 +370,11 @@ html:not(.dark) .demo-box {
   width: 38px;
   height: 58px;
   margin: 0 4px;
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--hair);
   border-radius: 3px;
-  background: var(--card, #141a1f);
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -367,9 +384,13 @@ html:not(.dark) .demo-box {
   animation: dropIn 0.5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }
 
-.demo-tf .tn { font-size: 6px; letter-spacing: 0.1em; color: var(--mute, rgba(255, 255, 255, 0.45)); }
-.demo-tf .nm { font-family: var(--serif, "Songti SC", "SimSun", serif); font-size: 9.5px; color: var(--ink2, #fff); }
-.demo-tf .pp { font-size: 6px; color: var(--mute, rgba(255, 255, 255, 0.45)); }
+html.dark .demo-tf {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.demo-tf .tn { font-size: 6px; letter-spacing: 0.1em; color: var(--mute); }
+.demo-tf .nm { font-family: var(--serif, "Songti SC", "SimSun", serif); font-size: 9.5px; color: var(--ink); }
+.demo-tf .pp { font-size: 6px; color: var(--mute); }
 
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-8px); filter: blur(3px); }
@@ -379,7 +400,7 @@ html:not(.dark) .demo-box {
   position: relative;
   height: 1px;
   margin: 4px 0 4px 24px;
-  background: linear-gradient(to right, transparent, var(--hair, rgba(255, 255, 255, 0.16)) 20%, var(--hair, rgba(255, 255, 255, 0.16)) 80%, transparent);
+  background: linear-gradient(to right, transparent, var(--hair) 20%, var(--hair) 80%, transparent);
 }
 
 .demo-link-line i {
@@ -389,7 +410,7 @@ html:not(.dark) .demo-box {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--ink, #ffffff);
+  background: var(--ink);
   animation: dotTravel 2.4s linear infinite;
 }
 
@@ -407,14 +428,14 @@ html:not(.dark) .demo-box {
   justify-content: flex-end;
   gap: 4px;
   padding-bottom: 8px;
-  border-bottom: 1px dashed var(--hair, rgba(255, 255, 255, 0.16));
+  border-bottom: 1px dashed var(--hair);
 }
 
 .demo-board-empty {
   margin: auto 0;
   text-align: center;
   font-size: 11px;
-  color: var(--mute, rgba(255, 255, 255, 0.45));
+  color: var(--mute);
 }
 
 .demo-board-sent {
@@ -423,7 +444,7 @@ html:not(.dark) .demo-box {
   font-size: 15px;
   line-height: 1.6;
   letter-spacing: 0.08em;
-  color: var(--ink2, rgba(255, 255, 255, 0.9));
+  color: var(--ink);
   animation: riseIn 0.6s cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }
 
@@ -442,9 +463,13 @@ html:not(.dark) .demo-box {
 .demo-slip {
   font-size: 11px;
   padding: 3px 6px;
-  border: 1px dashed var(--hair, rgba(255, 255, 255, 0.2));
-  color: var(--ink2, rgba(255, 255, 255, 0.85));
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--hair);
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+html.dark .demo-slip {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .demo-compose {
@@ -458,8 +483,8 @@ html:not(.dark) .demo-box {
   min-width: 0;
   background: none;
   border: 0;
-  border-bottom: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
-  color: var(--ink, #ffffff);
+  border-bottom: 1px solid var(--hair);
+  color: var(--ink);
   font-family: var(--serif, "Songti SC", "SimSun", serif);
   font-size: 13px;
   padding: 4px 2px;
@@ -469,24 +494,29 @@ html:not(.dark) .demo-box {
 .demo-btn-action {
   flex: 0 0 auto;
   background: none;
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
-  color: var(--ink, #ffffff);
+  border: 1px solid var(--hair);
+  color: var(--ink);
   font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.1em;
   padding: 4px 8px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-btn-action:hover {
+  border-color: var(--ink);
 }
 
 .demo-btn-action.highlight {
-  background: var(--ink, #ffffff);
-  color: var(--bg, #000000);
-  border-color: var(--ink, #ffffff);
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
 }
 
 .demo-hint {
   font-size: 10.5px;
-  color: var(--mute, rgba(255, 255, 255, 0.45));
+  color: var(--mute);
   margin: 6px 0 0;
 }
 
@@ -496,13 +526,13 @@ html:not(.dark) .demo-box {
   align-items: center;
   justify-content: space-between;
   padding-top: 16px;
-  border-top: 1px solid var(--hair, rgba(255, 255, 255, 0.12));
+  border-top: 1px solid var(--hair);
 }
 
 .rail-btn {
   background: none;
-  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
-  color: var(--ink2, rgba(255, 255, 255, 0.85));
+  border: 1px solid var(--hair);
+  color: var(--ink);
   font-family: inherit;
   font-size: 11.5px;
   letter-spacing: 0.2em;
@@ -512,13 +542,13 @@ html:not(.dark) .demo-box {
 }
 
 .rail-btn:hover {
-  border-color: var(--ink, #ffffff);
+  border-color: var(--ink);
 }
 
 .rail-btn.primary {
-  background: var(--ink, #ffffff);
-  color: var(--bg, #000000);
-  border-color: var(--ink, #ffffff);
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
 }
 
 .rail-dots {
@@ -531,7 +561,7 @@ html:not(.dark) .demo-box {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  border: 1px solid var(--mute, rgba(255, 255, 255, 0.45));
+  border: 1px solid var(--mute);
   background: none;
   cursor: pointer;
   padding: 0;
@@ -541,13 +571,13 @@ html:not(.dark) .demo-box {
 .rail-dot.active {
   width: 8px;
   height: 8px;
-  background: var(--ink, #ffffff);
-  border-color: var(--ink, #ffffff);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 0 0 6px var(--glow);
 }
 
 .rail-dot.past {
-  background: var(--mute, rgba(255, 255, 255, 0.45));
+  background: var(--mute);
   border-color: transparent;
 }
 
