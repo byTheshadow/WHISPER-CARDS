@@ -313,7 +313,7 @@
     var rowMode = el('div', 'row');
     rowMode.appendChild(label('传讯模式', '心念共感（实时打字显影、自由回应）· 凝思落笺（放板递出）'));
     refs.chatMode = O.ui.segCtl({
-      items: CHAT_MODES,
+      options: CHAT_MODES,
       value: st.chatMode || 'sync',
       onChange: function (v) {
         st.chatMode = v;

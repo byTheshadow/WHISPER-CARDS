@@ -64,6 +64,7 @@
     var o = opts || {};
     var wrap = el('div', 'segc');
     var btns = [];
+    var list = o.options || o.items || [];
     var i;
     function set(value) {
       var k;
@@ -84,7 +85,7 @@
       wrap.appendChild(b);
       btns.push(b);
     }
-    for (i = 0; i < o.options.length; i++) { pick(o.options[i]); }
+    for (i = 0; i < list.length; i++) { pick(list[i]); }
     set(o.value);
     return { node: wrap, set: set };
   }
