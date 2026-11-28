@@ -91,6 +91,53 @@
   color: var(--mute);
 }
 
+/* 重温初临引渡：东方玄学微光仪式按钮 */
+.guide-replay-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 22px auto 6px;
+  padding: 10px 22px 10px 24px;
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-size: 12.5px;
+  letter-spacing: 0.28em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px var(--glow2);
+  transition: all 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.guide-replay-card::before {
+  content: "✦";
+  display: inline-block;
+  font-size: 10px;
+  margin-right: 10px;
+  color: var(--mute);
+  transition: transform 0.4s, color 0.3s;
+}
+
+.guide-replay-card:hover {
+  border-color: var(--ink);
+  box-shadow: 0 6px 20px var(--glow);
+  transform: translateY(-1px);
+}
+
+.guide-replay-card:hover::before {
+  color: var(--ink);
+  transform: rotate(45deg);
+}
+
+.guide-replay-card:active {
+  transform: translateY(1px);
+  opacity: 0.8;
+}
+
 /* ---------- 按住确认：底部弹层 ----------
    实色降级在前，毛玻璃只在支持时增强；进度条 1.2s 走满，松手才生效。 */
 

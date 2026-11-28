@@ -609,9 +609,8 @@
     box.appendChild(el('div', null, '没有 AI，也没有语义判断；意义由你自己赋予'));
     box.appendChild(el('p', 'note', '数据只存在这台设备上（' + api.storage() + '）。系统可能在空间紧张时清理它，重要内容请自行导出。'));
 
-    var replayBtn = el('button', 'linkbtn', '重温初临引渡');
+    var replayBtn = el('button', 'guide-replay-card', '重温初临引渡');
     replayBtn.type = 'button';
-    replayBtn.style.marginTop = '18px';
     replayBtn.onclick = function () {
       if (api.openGuide) { api.openGuide(); }
     };
