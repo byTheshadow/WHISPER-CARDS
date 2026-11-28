@@ -40,6 +40,7 @@
     proactiveStreak: 0,     /* 彼方连续主动传讯次数 */
     gazeTimer: 0,           /* 凝视水墨波纹持续定时器 */
     gazing: false,          /* 当前彼方是否正在凝视中 */
+    chatMode: 'sync',       /* sync 心念共感（实时打字/自由主动响应） | async 凝思落笺（放板递出） */
     recipient: null         /* 当前会话连结的羁绊对象 { name, word, note } */
   };
 
@@ -301,7 +302,11 @@
       } else if (s.history.length === 0 && s.pending === 0) {
         var eg = el('div', 'empty-guide');
         eg.appendChild(el('span', 'eg-title', '轻触此处书写想说的话'));
-        eg.appendChild(el('span', 'eg-step', '先「放上板」 · 再「递出」向虚空'));
+        if (s.chatMode === 'sync') {
+          eg.appendChild(el('span', 'eg-step', '心中起念 · 即时显影 · 点「定音」落款'));
+        } else {
+          eg.appendChild(el('span', 'eg-step', '先「放上板」 · 再「递出」向虚空'));
+        }
         refs.line.appendChild(eg);
       } else {
         refs.line.appendChild(el('span', 'ph', '轻触此处书写'));
@@ -337,6 +342,28 @@
 
   function setButtons() {
     var has = refs.say.value.replace(/^\s+|\s+$/g, '').length > 0;
+    var isSync = s.chatMode === 'sync';
+
+    if (isSync) {
+      refs.btnPlace.textContent = '定音';
+      refs.btnPlace.title = '将此刻的心念话语正式刻录入星盘';
+      refs.btnPlace.disabled = !has;
+      refs.btnHand.hidden = true;
+      if (refs.sep) { refs.sep.hidden = true; }
+      refs.pend.textContent = '';
+      if (has && !refs.btnPlace.disabled) {
+        refs.btnPlace.classList.add('guide-place');
+      } else {
+        refs.btnPlace.classList.remove('guide-place');
+      }
+      return;
+    }
+
+    /* 模式 2：凝思落笺 */
+    refs.btnPlace.textContent = '放上板';
+    refs.btnPlace.title = '';
+    refs.btnHand.hidden = false;
+    if (refs.sep) { refs.sep.hidden = false; }
     refs.btnPlace.disabled = !has;
     refs.btnHand.disabled = s.running || (!has && s.pending === 0);
     refs.pend.textContent = (s.pending > 0) ? ('已放上板 ' + s.pending + ' 段') : '';
@@ -374,8 +401,14 @@
       s.history.push(item);
       persist();
     }
-    s.pending += 1;
-    cancelIdleProactive();
+    if (s.chatMode === 'sync') {
+      /* 心念共感模式：定音后直接完成落款，无需递出，彼方心跳继续自由调度 */
+      s.pending = 0;
+      scheduleIdleProactive();
+    } else {
+      s.pending += 1;
+      cancelIdleProactive();
+    }
     s.proactiveStreak = 0;
     setButtons();
   }
@@ -1024,6 +1057,9 @@
       }
     });
     renderMe();
+    if (O.storage && O.storage.prefs) {
+      s.chatMode = O.storage.prefs().chatMode || 'sync';
+    }
     setButtons();
     restore();
   }
@@ -1051,6 +1087,17 @@
   /* 只给验收用：把时间线压缩 n 倍播放 */
   function setSpeed(n) { s.speed = n > 0 ? n : 1; }
 
+  function onChatModeChange(mode) {
+    if (mode === 'sync' || mode === 'async') {
+      s.chatMode = mode;
+      renderMe();
+      setButtons();
+      if (mode === 'sync' && !s.running && s.pending === 0) {
+        scheduleIdleProactive();
+      }
+    }
+  }
+
   O.chat = {
     mount: mount,
     setSpeed: setSpeed,
@@ -1061,6 +1108,7 @@
     reset: reset,
     reveal: reveal,
     endSession: endSession,
-    setRecipient: setRecipient
+    setRecipient: setRecipient,
+    onChatModeChange: onChatModeChange
   };
 })(window);

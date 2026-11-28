@@ -1,0 +1,564 @@
+/* 初临引渡 · 新手仪式引导系统
+   继承东方玄学微光宣纸美学，兼容 Chrome 61 基线
+   包含三幕微卷、墨洇诗句、模式演示器与底部流转轨道 */
+
+.guide-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 15, 18, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+html:not(.dark) .guide-overlay {
+  background: rgba(244, 244, 242, 0.75);
+}
+
+.guide-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.guide-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 引渡卷轴容器 */
+.guide-card {
+  position: relative;
+  width: min(540px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel, rgba(20, 26, 31, 0.88));
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 24px 28px 20px;
+  box-sizing: border-box;
+  transform: translateY(16px) scale(0.98);
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.guide-overlay.active .guide-card {
+  transform: translateY(0) scale(1);
+}
+
+/* 顶部跳过暗扣 */
+.guide-skip {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: 0;
+  color: var(--mute, rgba(255, 255, 255, 0.45));
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.guide-skip:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* 卷轴滚动视口 */
+.guide-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 4px 16px;
+  scrollbar-width: none;
+}
+
+.guide-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 各幕文章 */
+.guide-act {
+  text-align: center;
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.guide-act.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 幕次小标 */
+.act-head {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 16px;
+}
+
+.act-head::before,
+.act-head::after {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--hair, rgba(255, 255, 255, 0.16));
+}
+
+.act-head h2 {
+  margin: 0 14px;
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.36em;
+  color: var(--mute, rgba(255, 255, 255, 0.45));
+}
+
+/* 诗意主文案：水墨洇开动效 */
+.guide-verse {
+  margin: 0 auto;
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.85;
+  letter-spacing: 0.12em;
+  color: var(--ink2, rgba(255, 255, 255, 0.92));
+}
+
+.guide-verse .vl {
+  display: block;
+}
+
+.guide-verse .ch {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(1.22);
+}
+
+.guide-verse.ink .ch {
+  animation: inkIn 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+@keyframes inkIn {
+  0% {
+    opacity: 0;
+    filter: blur(9px);
+    transform: scale(1.25);
+  }
+  60% {
+    opacity: 0.85;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* 要义点缀列表 */
+.guide-points {
+  list-style: none;
+  margin: 22px auto 0;
+  padding: 0;
+  text-align: left;
+  max-width: 440px;
+}
+
+.guide-points li {
+  display: flex;
+  align-items: flex-start;
+  padding: 11px 2px;
+  border-top: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.7s, transform 0.7s;
+  transition-delay: calc(var(--delay, 0ms));
+}
+
+.guide-points li:last-child {
+  border-bottom: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+}
+
+.guide-act.active .guide-points li {
+  opacity: 1;
+  transform: none;
+}
+
+.guide-glyph {
+  flex: 0 0 22px;
+  height: 22px;
+  margin-top: 2px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-size: 11px;
+  color: var(--ink2, rgba(255, 255, 255, 0.88));
+}
+
+.guide-points p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  color: var(--ink2, rgba(255, 255, 255, 0.88));
+}
+
+/* ---------- 传讯模式演示器 ---------- */
+.demo-wrap {
+  margin-top: 18px;
+  text-align: left;
+}
+
+.demo-tabs {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.demo-tab {
+  flex: 1 1 0;
+  background: none;
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  color: var(--ink2, rgba(255, 255, 255, 0.8));
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.demo-tab:first-child {
+  border-right: 0;
+}
+
+.demo-tab.active {
+  background: var(--ink, #ffffff);
+  border-color: var(--ink, #ffffff);
+  color: var(--bg, #000000);
+}
+
+.demo-tab small {
+  display: block;
+  font-size: 9.5px;
+  opacity: 0.6;
+  margin-top: 1px;
+}
+
+.demo-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--mute, rgba(255, 255, 255, 0.6));
+  margin: 0 0 10px;
+  min-height: 1.6em;
+}
+
+.demo-box {
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.16));
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px 14px;
+  min-height: 180px;
+  box-sizing: border-box;
+}
+
+html:not(.dark) .demo-box {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* 模式一：实时共振模拟 */
+.demo-live-row {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+}
+
+.demo-who {
+  flex: 0 0 24px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--mute, rgba(255, 255, 255, 0.45));
+}
+
+.demo-live-content {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.demo-typed {
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--ink2, rgba(255, 255, 255, 0.9));
+}
+
+.demo-typed .ch {
+  display: inline-block;
+  animation: chIn 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.demo-typed .gap {
+  display: inline-block;
+  width: 0.4em;
+}
+
+@keyframes chIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+    filter: blur(3px);
+  }
+}
+
+.demo-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.1em;
+  background: var(--ink, #ffffff);
+  animation: caretBlink 1.1s ease-in-out infinite;
+}
+
+@keyframes caretBlink {
+  50% { opacity: 0.1; }
+}
+
+.demo-splice {
+  display: flex;
+  margin-left: 8px;
+}
+
+.demo-tf {
+  width: 38px;
+  height: 58px;
+  margin: 0 4px;
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  border-radius: 3px;
+  background: var(--card, #141a1f);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px 3px;
+  box-sizing: border-box;
+  animation: dropIn 0.5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+.demo-tf .tn { font-size: 6px; letter-spacing: 0.1em; color: var(--mute, rgba(255, 255, 255, 0.45)); }
+.demo-tf .nm { font-family: var(--serif, "Songti SC", "SimSun", serif); font-size: 9.5px; color: var(--ink2, #fff); }
+.demo-tf .pp { font-size: 6px; color: var(--mute, rgba(255, 255, 255, 0.45)); }
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); filter: blur(3px); }
+}
+
+.demo-link-line {
+  position: relative;
+  height: 1px;
+  margin: 4px 0 4px 24px;
+  background: linear-gradient(to right, transparent, var(--hair, rgba(255, 255, 255, 0.16)) 20%, var(--hair, rgba(255, 255, 255, 0.16)) 80%, transparent);
+}
+
+.demo-link-line i {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink, #ffffff);
+  animation: dotTravel 2.4s linear infinite;
+}
+
+@keyframes dotTravel {
+  0% { left: 0; opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { left: calc(100% - 4px); opacity: 0; }
+}
+
+/* 模式二：凝思落笺模拟 */
+.demo-board {
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--hair, rgba(255, 255, 255, 0.16));
+}
+
+.demo-board-empty {
+  margin: auto 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--mute, rgba(255, 255, 255, 0.45));
+}
+
+.demo-board-sent {
+  text-align: center;
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  color: var(--ink2, rgba(255, 255, 255, 0.9));
+  animation: riseIn 0.6s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+}
+
+.demo-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 28px;
+  padding: 8px 0 4px;
+}
+
+.demo-slip {
+  font-size: 11px;
+  padding: 3px 6px;
+  border: 1px dashed var(--hair, rgba(255, 255, 255, 0.2));
+  color: var(--ink2, rgba(255, 255, 255, 0.85));
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.demo-compose {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.demo-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  color: var(--ink, #ffffff);
+  font-family: var(--serif, "Songti SC", "SimSun", serif);
+  font-size: 13px;
+  padding: 4px 2px;
+  outline: none;
+}
+
+.demo-btn-action {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  color: var(--ink, #ffffff);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.demo-btn-action.highlight {
+  background: var(--ink, #ffffff);
+  color: var(--bg, #000000);
+  border-color: var(--ink, #ffffff);
+}
+
+.demo-hint {
+  font-size: 10.5px;
+  color: var(--mute, rgba(255, 255, 255, 0.45));
+  margin: 6px 0 0;
+}
+
+/* ---------- 底部流转轨道 ---------- */
+.guide-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair, rgba(255, 255, 255, 0.12));
+}
+
+.rail-btn {
+  background: none;
+  border: 1px solid var(--hair, rgba(255, 255, 255, 0.2));
+  color: var(--ink2, rgba(255, 255, 255, 0.85));
+  font-family: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.2em;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.rail-btn:hover {
+  border-color: var(--ink, #ffffff);
+}
+
+.rail-btn.primary {
+  background: var(--ink, #ffffff);
+  color: var(--bg, #000000);
+  border-color: var(--ink, #ffffff);
+}
+
+.rail-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--mute, rgba(255, 255, 255, 0.45));
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.4s;
+}
+
+.rail-dot.active {
+  width: 8px;
+  height: 8px;
+  background: var(--ink, #ffffff);
+  border-color: var(--ink, #ffffff);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.rail-dot.past {
+  background: var(--mute, rgba(255, 255, 255, 0.45));
+  border-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .guide-card {
+    padding: 20px 16px 16px;
+  }
+  .guide-verse {
+    font-size: 16px;
+  }
+  .guide-points p {
+    font-size: 12.5px;
+  }
+}

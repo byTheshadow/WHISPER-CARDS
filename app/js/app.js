@@ -73,6 +73,7 @@
       if (O.fx.setGrain) { O.fx.setGrain(dark); }
     }
     if (O.sfx) { O.sfx.setVolume(prefs.sound === false ? 0 : 0.7); }
+    if (O.chat && O.chat.onChatModeChange) { O.chat.onChatModeChange(prefs.chatMode || 'sync'); }
     if (uiRefresh) { uiRefresh(prefs); }
   }
 
@@ -188,6 +189,10 @@
       },
       onClear: clearAll,
       openDecks: function () { showPage('decks'); },
+      openGuide: function () {
+        showPage('chat');
+        if (O.guide && O.guide.open) { O.guide.open(); }
+      },
       previewSound: function () { if (O.sfx) { O.sfx.unlock(); O.sfx.play('drop'); } },
       deckMeta: function () { return O.decks.meta(); },
       decksLoaded: function () { return O.decks.loaded(); },
@@ -328,6 +333,7 @@
       say: $('say'),
       btnPlace: $('btnPlace'),
       btnHand: $('btnHand'),
+      sep: doc.querySelector('.ctl .sep'),
       btnReveal: $('btnReveal'),
       pend: $('pend')
     }, {
@@ -408,6 +414,12 @@
     renderSettings();
     O.decks.load().then(function () { renderSettings(); }).then(null, function () { renderSettings(); });
     showOpen();
+    if (O.guide && O.guide.mount) {
+      O.guide.mount(doc.body);
+      if (!O.guide.hasSeen()) {
+        later(function () { O.guide.open(); }, 1200);
+      }
+    }
   }
 
   doc.addEventListener('visibilitychange', function () {

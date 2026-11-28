@@ -302,8 +302,26 @@
     };
   }
 
+  var CHAT_MODES = [
+    { v: 'sync', t: '心念共感' },
+    { v: 'async', t: '凝思落笺' }
+  ];
+
   function connectionSection(st, api, refs) {
     var s = section('连接');
+
+    var rowMode = el('div', 'row');
+    rowMode.appendChild(label('传讯模式', '心念共感（实时打字显影、自由回应）· 凝思落笺（放板递出）'));
+    refs.chatMode = O.ui.segCtl({
+      items: CHAT_MODES,
+      value: st.chatMode || 'sync',
+      onChange: function (v) {
+        st.chatMode = v;
+        api.onPref('chatMode', v);
+      }
+    });
+    rowMode.appendChild(refs.chatMode.node);
+    s.rows.appendChild(rowMode);
 
     var rowWave = el('div', 'row wave-row');
     rowWave.appendChild(label('等待时段', '心电波段滑动 · 调节最短与最长开口间隔'));
@@ -590,6 +608,15 @@
     box.appendChild(el('div', null, '每一次落卡都来自本机随机，不经过任何服务器'));
     box.appendChild(el('div', null, '没有 AI，也没有语义判断；意义由你自己赋予'));
     box.appendChild(el('p', 'note', '数据只存在这台设备上（' + api.storage() + '）。系统可能在空间紧张时清理它，重要内容请自行导出。'));
+
+    var replayBtn = el('button', 'linkbtn', '重温初临引渡');
+    replayBtn.type = 'button';
+    replayBtn.style.marginTop = '18px';
+    replayBtn.onclick = function () {
+      if (api.openGuide) { api.openGuide(); }
+    };
+    box.appendChild(replayBtn);
+
     sec.node.appendChild(box);
     return sec.node;
   }
@@ -611,6 +638,7 @@
 
     return function refresh(next) {
       st = copy(next);
+      if (refs.chatMode) { refs.chatMode.set(st.chatMode || 'sync'); }
       if (refs.winMin) { refs.winMin.set(st.win[0], true); }
       if (refs.winMax) { refs.winMax.set(st.win[1], true); }
       if (refs.sil) { refs.sil.set(st.sil, true); }

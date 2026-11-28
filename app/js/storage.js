@@ -19,6 +19,7 @@
     fade: true,
     speed: '1',
     sound: true,
+    chatMode: 'sync',       /* sync 心念共感（模式1） | async 凝思落笺（模式2） */
     probs: { retract: 4, clear: 6, pause: 14, abandon: 5, send: 25 }
   };
   var PROB_KEYS = ['retract', 'clear', 'pause', 'abandon', 'send'];
@@ -61,6 +62,7 @@
     if (typeof raw.fade === 'boolean') { p.fade = raw.fade; }
     if (raw.speed === '1' || raw.speed === '2' || raw.speed === '3') { p.speed = raw.speed; }
     if (typeof raw.sound === 'boolean') { p.sound = raw.sound; }
+    if (raw.chatMode === 'sync' || raw.chatMode === 'async') { p.chatMode = raw.chatMode; }
     var i;
     var k;
     for (i = 0; i < PROB_KEYS.length; i++) {
