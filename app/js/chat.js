@@ -279,6 +279,7 @@
   }
 
   function renderMe() {
+    if (!refs || !refs.line || !refs.say) { return; }
     if (s.mode !== 'me') {
       if (refs.draft) {
         var dv = refs.say.value;
@@ -341,7 +342,8 @@
   }
 
   function setButtons() {
-    var has = refs.say.value.replace(/^\s+|\s+$/g, '').length > 0;
+    if (!refs || !refs.btnPlace) { return; }
+    var has = refs.say ? (refs.say.value.replace(/^\s+|\s+$/g, '').length > 0) : false;
     var isSync = s.chatMode === 'sync';
 
     if (isSync) {

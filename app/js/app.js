@@ -322,7 +322,6 @@
     O.fx.init();
     head = O.candle.create($('cvCandle'), 1);
     big = O.candle.create($('cvBig'), 1.7);
-    applyPrefs(prefs, false);
     /* 会话编号要赶在 chat.mount 之前定下来：对话页靠它把上一轮的历史读回来。 */
     loadSession();
     O.chat.mount({
@@ -340,6 +339,7 @@
       light: function () { head.light(); },
       snuff: function () { head.snuff(); }
     });
+    applyPrefs(prefs, false);
     bind();
         if (O.starmap) {
       O.starmap.mount({
